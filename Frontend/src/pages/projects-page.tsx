@@ -6,13 +6,13 @@ import { Button } from '../components/ui/button';
 import { formatDate } from '../lib/utils';
 
 export function ProjectsPage() {
-  const { projects, setCurrentProject, fetchProjects } = useAppStore();
+  const { projects, loadProjects, isLoading, error, setCurrentProject } = useAppStore();
   const navigate = useNavigate();
   
   // Fetch projects when component mounts
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    loadProjects();
+  }, [loadProjects]);
   
   const handleCreateProject = () => {
     navigate('/setup-project');
@@ -34,7 +34,32 @@ export function ProjectsPage() {
           </Button>
         </div>
         
-        {projects.length === 0 ? (
+        {/* Loading state */}
+        {isLoading && (
+          <div className="bg-white shadow-sm rounded-lg p-8 text-center border border-gray-200">
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+            </div>
+            <p className="text-gray-600 mt-4">Loading your projects...</p>
+          </div>
+        )}
+        
+        {/* Error state */}
+        {error && !isLoading && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+            <h3 className="text-red-800 font-medium mb-2">Error loading projects</h3>
+            <p className="text-red-700">{error}</p>
+            <Button 
+              className="mt-4 bg-red-100 hover:bg-red-200 text-red-800 border-red-300"
+              onClick={() => loadProjects()}
+            >
+              Try Again
+            </Button>
+          </div>
+        )}
+        
+        {/* Empty state */}
+        {!isLoading && !error && projects.length === 0 && (
           <div className="bg-white shadow-sm rounded-lg p-8 text-center border border-gray-200">
             <h2 className="text-xl font-semibold mb-2 text-black">No projects yet</h2>
             <p className="text-gray-600 mb-6">
@@ -45,7 +70,10 @@ export function ProjectsPage() {
               Create Project
             </Button>
           </div>
-        ) : (
+        )}
+        
+        {/* Projects list */}
+        {!isLoading && !error && projects.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {projects.map((project) => (
               <div 
@@ -57,11 +85,24 @@ export function ProjectsPage() {
                 <p className="text-sm text-gray-500 mb-3">
                   {formatDate(project.createdAt)}
                 </p>
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {project.industry && (
                     <span className="px-2 py-1 text-xs bg-gray-100 rounded">
                       {project.industry}
                     </span>
+                  )}
+                  {project.persona && (
+                    <span className="px-2 py-1 text-xs bg-gray-100 rounded">
+                      {project.persona}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-xs text-gray-500">
+                    {project.context ? 
+                      project.context.substring(0, 60) + (project.context.length > 60 ? '...' : '')
+                      : 'No context provided'
+                    }
                   </div>
                   <ArrowRight className="h-4 w-4 text-black" />
                 </div>

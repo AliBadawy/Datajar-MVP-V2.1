@@ -3,6 +3,7 @@ import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ChatInterface from './components/ChatInterface';
 import { ProjectsPage } from './pages/projects-page';
+import { SetupProjectPage } from './pages/setup-project-page';
 
 const App: React.FC = () => {
   return (
@@ -11,8 +12,8 @@ const App: React.FC = () => {
         <Route path="/" element={<Navigate to="/projects" replace />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/chat" element={<ChatInterface />} />
-        {/* Will be implemented in the next step */}
-        <Route path="/setup-project" element={<div className="p-8">Project Setup Coming Soon</div>} />
+        <Route path="/chat/:projectId" element={<ChatInterface />} />
+        <Route path="/setup-project" element={<SetupProjectPage />} />
       </Routes>
     </Router>
   );
