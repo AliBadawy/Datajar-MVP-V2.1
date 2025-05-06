@@ -8,6 +8,7 @@ interface ChatMessage {
   content: string;
   isUser: boolean;
   isTyping?: boolean;
+  intent?: string;
 }
 
 const ChatInterface: React.FC = () => {
@@ -34,20 +35,28 @@ const ChatInterface: React.FC = () => {
     setIsThinking(true);
     
     try {
-      // Get response from backend
-      // Use window.location.hostname to make it work on both localhost and 127.0.0.1
-      const response = await axios.post(`http://${window.location.hostname}:8000/api/chat`, {
-        content: userMessage
+      // Call the classify endpoint only
+      const classifyResponse = await axios.post(`http://${window.location.hostname}:8000/api/classify`, {
+        messages: [
+          { role: "user", content: userMessage }
+        ]
       });
+      
+      const intent = classifyResponse.data.intent;
+      console.log("Message classified as:", intent);
       
       // After getting response, simulate typing animation
       setIsThinking(false);
       
-      // Add the AI response with typing animation
+      // Create response based on classification only
+      const responseContent = `This message was classified as: ${intent}`;
+      
+      // Add the AI response with typing animation and intent
       setMessages((prev) => [...prev, { 
-        content: response.data.response, 
+        content: responseContent,
         isUser: false, 
-        isTyping: true 
+        isTyping: true,
+        intent: intent
       }]);
     } catch (error) {
       // Handle errors
