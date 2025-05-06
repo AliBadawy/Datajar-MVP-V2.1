@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 import Message from './Message';
 import TypingIndicator from './TypingIndicator';
 import TypingMessage from './TypingMessage';
@@ -13,10 +14,14 @@ const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const [isError, setIsError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
+    
+    // Reset error state
+    setIsError(null);
     
     // Add user message immediately
     setMessages((prev) => [...prev, { content: inputValue, isUser: true }]);
@@ -28,14 +33,35 @@ const ChatInterface: React.FC = () => {
     // Show thinking indicator (three dots)
     setIsThinking(true);
     
-    // Simulate thinking delay (between 1-2 seconds)
-    const thinkingDelay = Math.floor(Math.random() * 1000) + 1000;
-    
-    // After thinking, start typing the response letter by letter
-    setTimeout(() => {
+    try {
+      // Get response from backend
+      // Use window.location.hostname to make it work on both localhost and 127.0.0.1
+      const response = await axios.post(`http://${window.location.hostname}:8000/api/chat`, {
+        content: userMessage
+      });
+      
+      // After getting response, simulate typing animation
       setIsThinking(false);
-      setMessages((prev) => [...prev, { content: userMessage, isUser: false, isTyping: true }]);
-    }, thinkingDelay);
+      
+      // Add the AI response with typing animation
+      setMessages((prev) => [...prev, { 
+        content: response.data.response, 
+        isUser: false, 
+        isTyping: true 
+      }]);
+    } catch (error) {
+      // Handle errors
+      console.error('Error sending message to backend:', error);
+      setIsThinking(false);
+      setIsError('Failed to connect to the backend server. Please try again.');
+      
+      // Show error message to user
+      setMessages((prev) => [...prev, { 
+        content: 'Sorry, I encountered an error connecting to the server. Please try again.', 
+        isUser: false,
+        isTyping: true
+      }]);
+    }
   };
 
   // Handle typing completed for a message
@@ -68,6 +94,11 @@ const ChatInterface: React.FC = () => {
           )
         ))}
         {isThinking && <TypingIndicator />}
+        {isError && (
+          <div className="text-red-500 text-sm mt-2 mb-2 text-center">
+            {isError}
+          </div>
+        )}
         <div ref={endRef} />
       </div>
 
@@ -85,6 +116,7 @@ const ChatInterface: React.FC = () => {
           <button
             onClick={handleSend}
             className="rounded-md bg-neutral-800 px-4 py-2 text-sm text-neutral-300 border border-neutral-700 hover:bg-neutral-700"
+            disabled={isThinking}
           >
             Send
           </button>
