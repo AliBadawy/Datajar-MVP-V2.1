@@ -4,24 +4,24 @@
 
 html, body, #root {
   height: 100%;
-  background-color: #171717; /* matches bolt background */
-  color: #e5e5e5; /* default text color from Bolt */
+  background-color: #f9fafb; /* bg-gray-50 */
+  color: #111827; /* text-gray-900 */
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  color: #000000; /* text-black */
+  font-weight: 600;
+}
+
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #000000; /* text-black */
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  color: #374151; /* text-gray-700 */
 }
 
 button {
@@ -43,15 +43,26 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
+.text-muted {
+  color: #6B7280; /* text-gray-500 */
+}
+
+.bg-card {
+  background-color: #FFFFFF; /* bg-white */
+  border: 1px solid #E5E7EB; /* border-gray-200 */
+  border-radius: 0.5rem; /* rounded-lg */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+}
+
+@media (prefers-color-scheme: dark) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: #e5e5e5;
+    background-color: #171717;
   }
   a:hover {
-    color: #747bff;
+    color: #535bf2;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #1a1a1a;
   }
 }

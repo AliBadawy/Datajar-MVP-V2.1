@@ -107,7 +107,7 @@ const ChatInterface: React.FC = () => {
   }, [messages, isThinking]);
 
   return (
-    <div className="flex flex-col h-full bg-neutral-900">
+    <div className="flex flex-col h-full bg-gray-50">
       {/* Message Container */}
       <div className="flex-1 overflow-auto px-6 py-4">
         {messages.map((msg, idx) => (
@@ -124,7 +124,7 @@ const ChatInterface: React.FC = () => {
         ))}
         {isThinking && <TypingIndicator />}
         {isError && (
-          <div className="text-red-500 text-sm mt-2 mb-2 text-center">
+          <div className="text-red-600 bg-red-50 text-sm mt-2 mb-2 p-2 rounded text-center">
             {isError}
           </div>
         )}
@@ -132,11 +132,11 @@ const ChatInterface: React.FC = () => {
       </div>
 
       {/* Input Container */}
-      <div className="border-t border-neutral-800 bg-neutral-900 px-6 py-4">
+      <div className="border-t border-gray-200 bg-white px-6 py-4">
         <div className="flex items-center gap-2">
           <input
             type="text"
-            className="flex-1 rounded-md bg-neutral-800 px-4 py-2 text-sm text-neutral-100 placeholder-neutral-500 border border-neutral-700 focus:outline-none focus:border-neutral-600"
+            className="flex-1 rounded bg-white px-4 py-2 text-sm text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
             placeholder="Message DataJar..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -144,7 +144,7 @@ const ChatInterface: React.FC = () => {
           />
           <button
             onClick={handleSend}
-            className="rounded-md bg-neutral-800 px-4 py-2 text-sm text-neutral-300 border border-neutral-700 hover:bg-neutral-700"
+            className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-black"
             disabled={isThinking}
           >
             Send

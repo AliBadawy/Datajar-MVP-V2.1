@@ -40,10 +40,14 @@ const TypingMessage: React.FC<TypingMessageProps> = ({ content, isUser, onTyping
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2`}>
-      <div className={`max-w-[80%] px-4 py-2 rounded-xl text-sm text-left ${isUser ? 'bg-neutral-800 text-neutral-200' : 'bg-neutral-700 text-neutral-100'}`}>
+      <div className={`max-w-[75%] px-4 py-3 rounded-lg ${
+        isUser 
+          ? 'bg-black text-white self-end' 
+          : 'bg-white text-black border border-gray-200 self-start'
+      }`}>
         {displayText}
         {currentIndex < content.length && showCursor && (
-          <span className="inline-block w-1.5 h-3.5 bg-neutral-400 ml-0.5 animate-pulse"></span>
+          <span className={`inline-block w-1.5 h-3.5 ml-0.5 animate-pulse ${isUser ? 'bg-white' : 'bg-gray-500'}`}></span>
         )}
       </div>
     </div>
