@@ -9,6 +9,9 @@ interface ChatMessage {
   isUser: boolean;
   isTyping?: boolean;
   intent?: string;
+  type?: string;
+  pandas_result?: any;
+  narrative?: string;
 }
 
 const ChatInterface: React.FC = () => {
@@ -17,6 +20,13 @@ const ChatInterface: React.FC = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [isError, setIsError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+
+  // Sample data for testing data analysis - you can remove or modify this
+  const sampleDataframe = {
+    "product": ["Product A", "Product B", "Product C"],
+    "revenue": [1200, 2500, 1800],
+    "marketing_cost": [500, 800, 400]
+  };
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
@@ -35,28 +45,38 @@ const ChatInterface: React.FC = () => {
     setIsThinking(true);
     
     try {
-      // Call the classify endpoint only
-      const classifyResponse = await axios.post(`http://${window.location.hostname}:8000/api/classify`, {
+      // Call the analyze endpoint instead of classify
+      const analyzeResponse = await axios.post(`http://${window.location.hostname}:8000/api/analyze`, {
         messages: [
           { role: "user", content: userMessage }
-        ]
+        ],
+        // Uncomment the line below to include sample data when testing
+        // dataframe: sampleDataframe
       });
       
-      const intent = classifyResponse.data.intent;
-      console.log("Message classified as:", intent);
+      // Handle response based on type
+      const responseType = analyzeResponse.data.type;
+      console.log("Response type:", responseType);
       
       // After getting response, simulate typing animation
       setIsThinking(false);
       
-      // Create response based on classification only
-      const responseContent = `This message was classified as: ${intent}`;
+      // Create response content based on response type
+      let responseContent = '';
       
-      // Add the AI response with typing animation and intent
+      if (responseType === 'chat') {
+        responseContent = analyzeResponse.data.response;
+      } else if (responseType === 'data_analysis') {
+        // For data analysis, combine the narrative with pandas result
+        responseContent = `${analyzeResponse.data.narrative}\n\nRaw result: ${JSON.stringify(analyzeResponse.data.pandas_result, null, 2)}`;
+      }
+      
+      // Add the AI response with typing animation
       setMessages((prev) => [...prev, { 
         content: responseContent,
         isUser: false, 
         isTyping: true,
-        intent: intent
+        type: responseType
       }]);
     } catch (error) {
       // Handle errors
