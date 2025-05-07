@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from routers.analyze_router import router as analyze_router
 from routers.project_router import router as project_router
+from routers.message_router import router as message_router
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -38,6 +39,7 @@ app.add_middleware(
 # Include routers
 app.include_router(analyze_router)
 app.include_router(project_router)
+app.include_router(message_router)
 
 # Define request schema
 class ChatMessage(BaseModel):

@@ -7,6 +7,7 @@ class AnalyzeRequest(BaseModel):
     persona: Optional[str] = "Data Analyst"
     industry: Optional[str] = "E-Commerce"
     business_context: Optional[str] = ""
+    project_id: Optional[int] = None  # Add project_id field to support project tracking
 
 class ProjectCreateRequest(BaseModel):
     name: str

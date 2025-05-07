@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createProject as apiCreateProject, getProjects } from './api';
+import { createProject as apiCreateProject, getProjects, fetchMessages } from './api';
 
 // Define the Project interface
 export interface Project {
@@ -11,6 +11,18 @@ export interface Project {
   persona?: string;
 }
 
+// Define Message interface
+export interface ChatMessage {
+  content: string;
+  isUser: boolean;
+  isTyping?: boolean;
+  intent?: string;
+  type?: string;
+  pandas_result?: any;
+  narrative?: string;
+  timestamp?: string;
+}
+
 // Define the AppStore interface
 interface AppStore {
   // State
@@ -18,6 +30,9 @@ interface AppStore {
   currentProjectId: string | null;
   isLoading: boolean;
   error: string | null;
+  messages: ChatMessage[];
+  messagesLoading: boolean;
+  messagesError: string | null;
   
   // Actions
   setCurrentProject: (projectId: string) => void;
@@ -30,6 +45,9 @@ interface AppStore {
   }) => Promise<string>;
   fetchProjects: () => void;
   loadProjects: () => Promise<void>;
+  fetchMessageHistory: (projectId: string | number) => Promise<void>;
+  addMessage: (message: ChatMessage) => void;
+  clearMessages: () => void;
   clearError: () => void;
 }
 
@@ -40,6 +58,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   currentProjectId: null,
   isLoading: false,
   error: null,
+  messages: [],
+  messagesLoading: false,
+  messagesError: null,
   
   // Actions
   setCurrentProject: (projectId) => set(() => ({ currentProjectId: projectId })),
@@ -143,5 +164,41 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ projects: mockProjects });
   },
   
-  clearError: () => set({ error: null })
+  // Fetch message history for a project
+  fetchMessageHistory: async (projectId) => {
+    set({ messagesLoading: true, messagesError: null });
+    
+    try {
+      // Fetch messages from the API
+      const messagesData = await fetchMessages(projectId);
+      
+      // Convert to our ChatMessage format
+      const chatMessages: ChatMessage[] = messagesData.map(msg => ({
+        content: msg.content,
+        isUser: msg.role === 'user',
+        intent: msg.intent,
+        type: msg.intent,  // Map intent to type for rendering
+        timestamp: msg.created_at
+      }));
+      
+      // Update state with messages
+      set({ messages: chatMessages, messagesLoading: false });
+    } catch (error) {
+      console.error('Failed to load message history:', error);
+      set({ 
+        messagesError: error instanceof Error ? error.message : 'Failed to load messages', 
+        messagesLoading: false 
+      });
+    }
+  },
+  
+  // Add a single message to the messages array
+  addMessage: (message) => set(state => ({
+    messages: [...state.messages, message]
+  })),
+  
+  // Clear all messages
+  clearMessages: () => set({ messages: [] }),
+  
+  clearError: () => set({ error: null, messagesError: null })
 }));

@@ -20,7 +20,7 @@ export function ProjectsPage() {
   
   const handleSelectProject = (projectId: string) => {
     setCurrentProject(projectId);
-    navigate('/chat');
+    navigate(`/chat/${projectId}`);
   };
 
   return (
