@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../lib/store';
 import SallaDialog from './salla-dialog';
 
 export default function ProjectSetupWizard() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { createProject } = useAppStore();
   
   // Loading and error states
@@ -14,48 +13,6 @@ export default function ProjectSetupWizard() {
   
   // Step state: 0 → 4
   const [step, setStep] = useState(0);
-
-  // Read step from URL parameters and restore form data when component mounts
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const stepParam = params.get('step');
-    
-    // Try to load saved form data if exists
-    const savedFormData = localStorage.getItem('project_form_data');
-    if (savedFormData) {
-      try {
-        const formData = JSON.parse(savedFormData);
-        
-        // Restore form fields
-        if (formData.projectName) setProjectName(formData.projectName);
-        if (formData.persona) setPersona(formData.persona);
-        if (formData.context) setContext(formData.context);
-        if (formData.industry) setIndustry(formData.industry);
-        
-        // Don't remove the data yet as we might need it if user refreshes
-      } catch (error) {
-        console.error('Error parsing saved form data:', error);
-      }
-    }
-    
-    // Handle step restoration
-    if (stepParam) {
-      const stepNumber = parseInt(stepParam, 10);
-      if (!isNaN(stepNumber) && stepNumber >= 0 && stepNumber < steps.length) {
-        setStep(stepNumber);
-      }
-    } else {
-      // Check if we have a stored step in localStorage
-      const storedStep = localStorage.getItem('project_setup_step');
-      if (storedStep) {
-        const stepNumber = parseInt(storedStep, 10);
-        if (!isNaN(stepNumber) && stepNumber >= 0 && stepNumber < steps.length) {
-          setStep(stepNumber);
-          localStorage.removeItem('project_setup_step');
-        }
-      }
-    }
-  }, [location]);
 
   // Project state
   const [projectName, setProjectName] = useState('');
@@ -236,12 +193,7 @@ export default function ProjectSetupWizard() {
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-3">Connect E-commerce Store</h3>
               <p className="text-sm text-gray-600 mb-4">Connect your Salla store to analyze your e-commerce data</p>
-              <SallaDialog 
-                projectName={projectName}
-                persona={persona}
-                context={context}
-                industry={industry}
-              />
+              <SallaDialog />
             </div>
             
             <div className="mt-8 pt-6 border-t border-gray-200">
@@ -250,37 +202,36 @@ export default function ProjectSetupWizard() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                <p className="text-sm text-gray-500 mt-2 mb-1">Drag and drop a CSV file here, or click to select</p>
-                <p className="text-xs text-gray-400">Max file size: 5MB</p>
-                
-                {/* File input is now wrapped in a label for better control */}
-                <label className={`${file ? 'hidden' : 'absolute inset-0 w-full h-full opacity-0 cursor-pointer'}`}>
-                  <input 
-                    type="file" 
-                    className="sr-only"
-                    accept=".csv"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)} 
-                  />
-                </label>
-                
-                {file && (
-                  <div className="mt-3 text-sm text-black font-medium">
-                    <p>Selected: {file.name}</p>
-                    <button 
-                      type="button"
-                      className="mt-2 text-xs text-red-600 hover:text-red-800"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFile(null);
-                      }}
-                    >
-                      Remove file
-                    </button>
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-gray-500 mt-2">You can also upload your data later in the chat interface</p>
+              <p className="text-sm text-gray-500 mt-2 mb-1">Drag and drop a CSV file here, or click to select</p>
+              <p className="text-xs text-gray-400">Max file size: 5MB</p>
+              
+              {/* File input is now wrapped in a label for better control */}
+              <label className={`${file ? 'hidden' : 'absolute inset-0 w-full h-full opacity-0 cursor-pointer'}`}>
+                <input 
+                  type="file" 
+                  className="sr-only"
+                  accept=".csv"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)} 
+                />
+              </label>
+              
+              {file && (
+                <div className="mt-3 text-sm text-black font-medium">
+                  <p>Selected: {file.name}</p>
+                  <button 
+                    type="button"
+                    className="mt-2 text-xs text-red-600 hover:text-red-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFile(null);
+                    }}
+                  >
+                    Remove file
+                  </button>
+                </div>
+              )}
             </div>
+            <p className="text-xs text-gray-500 mt-2">You can also upload your data later in the chat interface</p>
           </div>
         )}
       </div>

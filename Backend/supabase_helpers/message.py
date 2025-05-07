@@ -50,23 +50,30 @@ def get_messages_by_project(project_id: int, limit: int = 100, offset: int = 0) 
         # Get Supabase client
         supabase = get_supabase_client()
         
-        # Query messages for the project
-        response = supabase.table("messages") \
-            .select("role, content") \
+        # Query messages for the project - without using offset which isn't supported by some Supabase SDK versions
+        query = supabase.table("messages") \
+            .select("*") \
             .eq("project_id", project_id) \
-            .order("created_at") \
-            .limit(limit) \
-            .offset(offset) \
-            .execute()
+            .order("created_at")
+            
+        # Apply limit
+        if limit > 0:
+            query = query.limit(limit)
+            
+        # Execute the query
+        response = query.execute()
         
-        # Format messages for OpenAI API
+        # Format messages with all needed fields
         messages = []
         for msg in response.data or []:
-            # Messages need to have the format {"role": "...", "content": "..."}
-            messages.append({
-                "role": msg["role"], 
-                "content": msg["content"]
-            })
+            message_obj = {
+                "role": msg["role"],
+                "content": msg["content"],
+                "created_at": msg.get("created_at"),
+                "intent": msg.get("intent", "chat"),  # Default to 'chat' if not specified
+                "id": msg.get("id")
+            }
+            messages.append(message_obj)
             
         return messages
     except Exception as e:
