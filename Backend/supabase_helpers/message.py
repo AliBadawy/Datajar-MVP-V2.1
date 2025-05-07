@@ -44,18 +44,31 @@ def get_messages_by_project(project_id: int, limit: int = 100, offset: int = 0) 
         offset (int): Number of messages to skip (for pagination)
     
     Returns:
-        List[Dict]: List of message objects
+        List[Dict]: List of message objects formatted for the OpenAI API
     """
-    # Get Supabase client
-    supabase = get_supabase_client()
-    
-    # Query messages for the project with pagination
-    response = supabase.table("messages")\
-        .select("*")\
-        .eq("project_id", project_id)\
-        .order("created_at")\
-        .range(offset, offset + limit - 1)\
-        .execute()
-    
-    # Return messages or empty list
-    return response.data or []
+    try:
+        # Get Supabase client
+        supabase = get_supabase_client()
+        
+        # Query messages for the project
+        response = supabase.table("messages") \
+            .select("role, content") \
+            .eq("project_id", project_id) \
+            .order("created_at") \
+            .limit(limit) \
+            .offset(offset) \
+            .execute()
+        
+        # Format messages for OpenAI API
+        messages = []
+        for msg in response.data or []:
+            # Messages need to have the format {"role": "...", "content": "..."}
+            messages.append({
+                "role": msg["role"], 
+                "content": msg["content"]
+            })
+            
+        return messages
+    except Exception as e:
+        print(f"Error retrieving messages for project {project_id}: {str(e)}")
+        return []

@@ -39,16 +39,38 @@ def classify_user_prompt(prompt: str) -> str:
         
     return intent
 
-def get_openai_response(messages):
+def get_openai_response(messages, persona="Data Analyst", industry="E-Commerce", business_context=""):
     """
-    Gets a response from OpenAI's chat completion API
+    Gets a response from OpenAI's chat completion API with personalized context
     
     Args:
         messages (List[Dict[str, str]]): List of message objects with 'role' and 'content'
+        persona (str): The persona to adopt (e.g., "Data Analyst", "Business Intelligence")
+        industry (str): The industry context (e.g., "E-Commerce", "Healthcare")
+        business_context (str): Additional business context or goals
         
     Returns:
-        str: The AI response text
+        str: The AI response text personalized to the context
     """
+    # Create a personalized system prompt
+    system_content = f"""You are a helpful {persona} assistant specialized in the {industry} industry.
+
+{business_context if business_context else ''}
+
+Provide clear, concise, and actionable insights based on your expertise.
+"""
+    
+    # Add or replace the system message
+    has_system = False
+    for msg in messages:
+        if msg.get("role") == "system":
+            msg["content"] = system_content
+            has_system = True
+            break
+            
+    if not has_system:
+        messages = [{"role": "system", "content": system_content}] + messages
+        
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages

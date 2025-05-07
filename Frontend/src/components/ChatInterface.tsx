@@ -114,11 +114,10 @@ const ChatInterface: React.FC = () => {
     };
   }, [projectId, safelyFetchMessages]); // Removed messagesLoading from dependencies
 
-  // Sample data for testing data analysis - you can remove or modify this
-  const sampleDataframe = {
-    "product": ["Product A", "Product B", "Product C"],
-    "revenue": [1200, 2500, 1800],
-    "marketing_cost": [500, 800, 400]
+  // Helper function to format data for analysis if needed in the future
+  const formatDataForAnalysis = (data: any) => {
+    // This will be used when we implement data upload and analysis
+    return data;
   };
 
   const handleSend = async () => {
