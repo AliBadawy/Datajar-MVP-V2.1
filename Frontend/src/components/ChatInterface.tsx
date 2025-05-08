@@ -24,9 +24,14 @@ const ChatInterface: React.FC = () => {
   const messages = useAppStore(state => state.messages);
   const messagesLoading = useAppStore(state => state.messagesLoading);
   const messagesError = useAppStore(state => state.messagesError);
+  const dataframe = useAppStore(state => state.dataframe);
+  const projectMetadata = useAppStore(state => state.projectMetadata);
+  const contextLoading = useAppStore(state => state.contextLoading);
+  const contextError = useAppStore(state => state.contextError);
   
   // Get store actions - these won't change between renders
   const fetchMessageHistory = useAppStore(state => state.fetchMessageHistory);
+  const loadProjectContext = useAppStore(state => state.loadProjectContext);
   const addMessage = useAppStore(state => state.addMessage);
   const setCurrentProject = useAppStore(state => state.setCurrentProject);
   
@@ -34,9 +39,11 @@ const ChatInterface: React.FC = () => {
   const stateInfo = useMemo(() => ({
     currentProjectId,
     messagesCount: messages.length,
-    isLoading: messagesLoading,
-    hasError: messagesError !== null
-  }), [currentProjectId, messages.length, messagesLoading, messagesError]);
+    isLoading: messagesLoading || contextLoading,
+    hasError: messagesError !== null || contextError !== null,
+    hasData: dataframe !== null,
+    hasMetadata: projectMetadata !== null
+  }), [currentProjectId, messages.length, messagesLoading, messagesError, dataframe, projectMetadata, contextLoading, contextError]);
   
   // Debug state with memoized values to prevent rendering loops
   useEffect(() => {
@@ -103,8 +110,17 @@ const ChatInterface: React.FC = () => {
   useEffect(() => {
     // Only fetch if we have a project ID and it's different from the last one we loaded
     if (projectId && loadedProjectIdRef.current !== projectId) {
-      console.log('Fetching messages for project:', projectId);
-      safelyFetchMessages(projectId);
+      console.log('Loading full context for project:', projectId);
+      
+      // Use the new loadProjectContext function to load everything at once
+      loadProjectContext(projectId).catch(error => {
+        console.error('Failed to load project context:', error);
+        setIsError(`Failed to load project context: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        
+        // Fall back to just fetching messages if the full context fails
+        safelyFetchMessages(projectId);
+      });
+      
       loadedProjectIdRef.current = projectId; // Store the project ID we've loaded
     }
     
@@ -112,12 +128,16 @@ const ChatInterface: React.FC = () => {
     return () => {
       // Nothing to clean up, but this helps React optimize the effect
     };
-  }, [projectId, safelyFetchMessages]); // Removed messagesLoading from dependencies
+  }, [projectId, loadProjectContext, safelyFetchMessages]); // Added loadProjectContext to dependencies
 
-  // Helper function to format data for analysis if needed in the future
-  const formatDataForAnalysis = (data: any) => {
-    // This will be used when we implement data upload and analysis
-    return data;
+  // Format data for analysis using stored dataframe
+  const getDataForAnalysis = () => {
+    if (!dataframe) return undefined;
+    
+    return {
+      rows: dataframe.rows,
+      columns: dataframe.columns
+    };
   };
 
   const handleSend = async () => {
@@ -140,15 +160,19 @@ const ChatInterface: React.FC = () => {
     setIsThinking(true);
     
     try {
-      // Call the analyze endpoint instead of classify
+      // Call the analyze endpoint with full context
       const analyzeResponse = await axios.post(`http://${window.location.hostname}:8000/api/analyze`, {
         messages: [
           { role: "user", content: userMessage }
         ],
         // Include current project ID if available
         project_id: currentProjectId ? parseInt(currentProjectId) : undefined,
-        // Uncomment the line below to include sample data when testing
-        // dataframe: sampleDataframe
+        // Include dataframe if available
+        dataframe: getDataForAnalysis(),
+        // Include project metadata if available
+        persona: projectMetadata?.persona,
+        industry: projectMetadata?.industry,
+        business_context: projectMetadata?.context
       });
       
       // Handle response based on type

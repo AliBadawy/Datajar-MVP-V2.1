@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createProject as apiCreateProject, getProjects, fetchMessages } from './api';
+import { createProject as apiCreateProject, getProjects, fetchMessages, getProjectContext } from './api';
 
 // Define the Project interface
 export interface Project {
@@ -23,6 +23,17 @@ export interface ChatMessage {
   timestamp?: string;
 }
 
+// Define dataframe interface for project context
+interface DataFrame {
+  rows: any[];
+  columns: string[];
+  summary?: {
+    total_rows: number;
+    total_columns: number;
+    memory_usage: string;
+  };
+}
+
 // Define the AppStore interface
 interface AppStore {
   // State
@@ -33,6 +44,14 @@ interface AppStore {
   messages: ChatMessage[];
   messagesLoading: boolean;
   messagesError: string | null;
+  dataframe: DataFrame | null;
+  projectMetadata: {
+    persona: string;
+    industry: string;
+    context: string;
+  } | null;
+  contextLoading: boolean;
+  contextError: string | null;
   
   // Actions
   setCurrentProject: (projectId: string) => void;
@@ -49,6 +68,9 @@ interface AppStore {
   addMessage: (message: ChatMessage) => void;
   clearMessages: () => void;
   clearError: () => void;
+  setDataFrame: (dataframe: DataFrame | null) => void;
+  setProjectMetadata: (metadata: { persona: string; industry: string; context: string } | null) => void;
+  loadProjectContext: (projectId: string | number) => Promise<void>;
 }
 
 // Create the store
@@ -61,6 +83,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   messages: [],
   messagesLoading: false,
   messagesError: null,
+  dataframe: null,
+  projectMetadata: null,
+  contextLoading: false,
+  contextError: null,
   
   // Actions
   setCurrentProject: (projectId) => set(() => ({ currentProjectId: projectId })),
@@ -200,5 +226,56 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Clear all messages
   clearMessages: () => set({ messages: [] }),
   
-  clearError: () => set({ error: null, messagesError: null })
+  clearError: () => set({ error: null }),
+  
+  // Set dataframe for analysis
+  setDataFrame: (dataframe) => set({ dataframe }),
+  
+  // Set project metadata
+  setProjectMetadata: (metadata) => set({ projectMetadata: metadata }),
+  
+  // Load full project context - includes project data, messages, and dataframe
+  loadProjectContext: async (projectId) => {
+    set({ contextLoading: true, contextError: null });
+    
+    try {
+      // Fetch the full context from the backend
+      const contextData = await getProjectContext(projectId);
+      
+      // Update state with all the context data
+      set({ 
+        projectMetadata: {
+          persona: contextData.project.persona || 'Data Analyst',
+          industry: contextData.project.industry || 'E-Commerce',
+          context: contextData.project.context || ''
+        },
+        messages: contextData.messages.map(msg => ({
+          content: msg.content,
+          isUser: msg.role === 'user',
+          intent: msg.intent,
+          type: msg.intent,
+          timestamp: msg.created_at
+        })),
+        dataframe: contextData.has_data ? {
+          rows: contextData.data_preview || [],
+          columns: contextData.columns || [],
+          summary: contextData.data_summary
+        } : null,
+        contextLoading: false
+      });
+      
+      console.log('Loaded project context:', { 
+        project: contextData.project,
+        messagesCount: contextData.messages.length,
+        hasData: contextData.has_data
+      });
+      
+    } catch (error) {
+      console.error('Failed to load project context:', error);
+      set({
+        contextError: error instanceof Error ? error.message : 'Failed to load project context',
+        contextLoading: false
+      });
+    }
+  }
 }));

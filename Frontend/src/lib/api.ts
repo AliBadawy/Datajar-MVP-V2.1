@@ -21,6 +21,19 @@ export interface MessageResponse {
   created_at: string;
 }
 
+export interface ProjectContextResponse {
+  project: ProjectResponse;
+  messages: MessageResponse[];
+  has_data: boolean;
+  data_preview?: any[];
+  columns?: string[];
+  data_summary?: {
+    total_rows: number;
+    total_columns: number;
+    memory_usage: string;
+  };
+}
+
 // Base API URL
 const API_URL = "http://localhost:8000";
 
@@ -42,4 +55,9 @@ export async function getProject(id: number): Promise<ProjectResponse> {
 export async function fetchMessages(projectId: number | string, page: number = 1, limit: number = 100): Promise<MessageResponse[]> {
   const response = await axios.get(`${API_URL}/api/messages/${projectId}?page=${page}&limit=${limit}`);
   return response.data.messages;
+}
+
+export async function getProjectContext(projectId: number | string): Promise<ProjectContextResponse> {
+  const response = await axios.get(`${API_URL}/api/project/${projectId}/context`);
+  return response.data;
 }
