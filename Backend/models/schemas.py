@@ -18,3 +18,9 @@ class ProjectCreateRequest(BaseModel):
 class ProjectResponse(ProjectCreateRequest):
     id: int
     created_at: str
+
+class SallaOrdersRequest(BaseModel):
+    access_token: str
+    from_date: str  # e.g. "2024-01-01"
+    to_date: str    # e.g. "2024-01-31"
+    project_id: int  # Associate with a specific project

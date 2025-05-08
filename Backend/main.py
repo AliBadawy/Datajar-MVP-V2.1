@@ -6,6 +6,7 @@ from routers.analyze_router import router as analyze_router
 from routers.project_router import router as project_router
 from routers.message_router import router as message_router
 from routers.salla_auth_router import router as salla_auth_router
+from routers.salla_router import router as salla_router
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -42,6 +43,7 @@ app.include_router(analyze_router)
 app.include_router(project_router)
 app.include_router(message_router)
 app.include_router(salla_auth_router)
+app.include_router(salla_router)
 
 # Define request schema
 class ChatMessage(BaseModel):
