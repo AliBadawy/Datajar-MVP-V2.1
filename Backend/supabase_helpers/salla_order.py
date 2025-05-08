@@ -1,11 +1,13 @@
 import pandas as pd
 from typing import List, Dict, Any, Optional
 from utils.supabase_client import get_supabase_client
+import json
+from supabase_helpers.project import get_or_create_project
 
-# Get the Supabase client
+# Get Supabase client
 supabase = get_supabase_client()
 
-# In-memory store for DataFrames (temporary session-based storage)
+# In-memory store for salla orders (temporary session-based storage)
 # In production, this would likely be replaced with Redis or another distributed cache
 salla_orders_session_store = {}
 
@@ -20,6 +22,18 @@ def save_salla_orders(project_id: int, df: pd.DataFrame):
     Returns:
         dict: Result of the insert operation
     """
+    # Validate project_id
+    if project_id is None or not isinstance(project_id, int) or project_id <= 0:
+        error_msg = f"Invalid project_id: {project_id}. Must be a positive integer."
+        print(error_msg)
+        return {"success": False, "error": error_msg, "message": "Failed to save orders: invalid project ID"}
+    
+    # Get or create the project in the database
+    print(f"Getting or creating project with ID: {project_id}")
+    project = get_or_create_project(project_id)
+    
+    print(f"Saving orders for project ID: {project_id} (Project name: {project.get('name', 'UNKNOWN')})")
+    
     if df.empty:
         return {"count": 0, "message": "No orders to save"}
     
@@ -61,6 +75,18 @@ def save_salla_orders(project_id: int, df: pd.DataFrame):
         # Log what we're about to insert
         print(f"Prepared {len(mapped_df)} rows with columns: {mapped_df.columns.tolist()}")
         
+        # Validate project_id column to ensure it's properly set
+        if 'project_id' not in mapped_df.columns or mapped_df['project_id'].isna().any():
+            print("WARNING: project_id column is missing or contains null values!")
+            print(f"Setting all project_id values to {project_id}")
+            mapped_df['project_id'] = project_id
+        
+        # Double check again to be absolutely sure
+        if mapped_df['project_id'].isna().any():
+            print("ERROR: project_id still contains null values after assignment!")
+            # Force set all to project_id again
+            mapped_df['project_id'] = mapped_df['project_id'].fillna(project_id)
+        
         # Check for null values and replace them with None for valid JSON
         for col in mapped_df.columns:
             if mapped_df[col].isna().any():
@@ -92,18 +118,47 @@ def save_salla_orders(project_id: int, df: pd.DataFrame):
                     clean_row[key] = value
                 else:
                     clean_row[key] = str(value)
+                    
+            # Double-check project_id is set
+            if clean_row.get('project_id') is None:
+                clean_row['project_id'] = project_id
+                
             clean_rows.append(clean_row)
         
-        print(f"Cleaned {len(clean_rows)} rows for insertion")
+        print(f"Sending {len(clean_rows)} rows to Supabase")
         
-        # Insert data into Supabase
-        result = supabase.table("salla_orders").insert(clean_rows).execute()
-        
-        return {
-            "success": True,
-            "count": len(rows),
-            "message": f"Successfully saved {len(rows)} Salla orders for project {project_id}"
-        }
+        # Insert into database
+        try:
+            # First, check if we need to delete any existing orders for this project
+            existing = supabase.table("salla_orders").select("id").eq("project_id", project_id).execute()
+            existing_count = len(existing.data) if existing.data else 0
+            
+            if existing_count > 0:
+                print(f"Found {existing_count} existing orders for project {project_id}. Replacing them.")
+                supabase.table("salla_orders").delete().eq("project_id", project_id).execute()
+            
+            # Insert the new orders
+            response = supabase.table("salla_orders").insert(clean_rows).execute()
+            
+            if not response.data:
+                raise Exception(f"Insert operation returned no data. Response: {response}")
+                
+            print(f"Successfully saved {len(clean_rows)} Salla orders for project {project_id}")
+            return {
+                "success": True,
+                "count": len(clean_rows),
+                "message": f"Successfully saved {len(clean_rows)} Salla orders",
+                "project_id": project_id,
+                "project_name": project.get("name", "UNKNOWN")
+            }
+        except Exception as e:
+            error_msg = f"Failed to save orders to database: {str(e)}"
+            print(error_msg)
+            return {
+                "success": False,
+                "error": error_msg,
+                "message": "Failed to save orders due to database error"
+            }
     except Exception as e:
         print(f"Error saving Salla orders to Supabase: {str(e)}")
         return {

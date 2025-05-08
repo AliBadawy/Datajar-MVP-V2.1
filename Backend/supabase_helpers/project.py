@@ -33,3 +33,59 @@ def get_project_by_id(project_id: int) -> Optional[Dict[str, Any]]:
     except Exception as e:
         print(f"Error retrieving project {project_id}: {str(e)}")
         return None
+
+
+def get_or_create_project(project_id: int) -> Dict[str, Any]:
+    """
+    Get a project by ID, or create a default one if it doesn't exist.
+    
+    Args:
+        project_id (int): The ID of the project to retrieve or create
+        
+    Returns:
+        Dict[str, Any]: The project data
+    """
+    # First try to get the existing project
+    project = get_project_by_id(project_id)
+    
+    if project:
+        print(f"Found existing project: {project['name']} (ID: {project['id']})")
+        return project
+        
+    # If project doesn't exist, get the first available project
+    try:
+        supabase = get_supabase_client()
+        response = supabase.table("projects").select("*").limit(1).execute()
+        
+        if response.data and len(response.data) > 0:
+            project = response.data[0]
+            print(f"Using first available project: {project['name']} (ID: {project['id']})")
+            return project
+    except Exception as e:
+        print(f"Error finding alternative project: {str(e)}")
+    
+    # If no projects exist, create a default one
+    try:
+        print("Creating default project...")
+        from models.schemas import ProjectCreateRequest
+        
+        default_project = ProjectCreateRequest(
+            name="Default Salla Project",
+            persona="E-commerce Manager",
+            context="Auto-created for Salla integration",
+            industry="E-commerce"
+        )
+        
+        new_project = insert_project(default_project)
+        print(f"Created default project with ID: {new_project['id']}")
+        return new_project
+    except Exception as e:
+        print(f"Error creating default project: {str(e)}")
+        # Return a minimal project definition as fallback
+        return {
+            "id": project_id,
+            "name": "Default Project",
+            "persona": "Data Analyst",
+            "context": "Auto-created",
+            "industry": "E-commerce"
+        }
