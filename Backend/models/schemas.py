@@ -14,10 +14,12 @@ class ProjectCreateRequest(BaseModel):
     persona: str
     context: str
     industry: str
+    user_id: Optional[str] = None  # Supabase user ID for row-level security
 
 class ProjectResponse(ProjectCreateRequest):
     id: int
     created_at: str
+    user_id: Optional[str] = None  # Ensure user_id is included in responses
 
 class SallaOrdersRequest(BaseModel):
     access_token: str

@@ -30,9 +30,21 @@ def save_salla_orders(project_id: int, df: pd.DataFrame):
     
     # Get or create the project in the database
     print(f"Getting or creating project with ID: {project_id}")
-    project = get_or_create_project(project_id)
-    
-    print(f"Saving orders for project ID: {project_id} (Project name: {project.get('name', 'UNKNOWN')})")
+    try:
+        # Call get_project_by_id instead of get_or_create_project since we only have the ID
+        from supabase_helpers.project import get_project_by_id
+        project = get_project_by_id(project_id)
+        
+        if not project:
+            print(f"WARNING: Project with ID {project_id} not found. Creating placeholder.")
+            # Create a minimal project data dict with the ID
+            project = {'id': project_id, 'name': f'Project {project_id}'}
+        
+        print(f"Saving orders for project ID: {project_id} (Project name: {project.get('name', 'UNKNOWN')})")
+    except Exception as e:
+        print(f"Error retrieving project {project_id}: {str(e)}")
+        # Continue with a minimal project object
+        project = {'id': project_id, 'name': f'Project {project_id}'}
     
     if df.empty:
         return {"count": 0, "message": "No orders to save"}
@@ -129,28 +141,92 @@ def save_salla_orders(project_id: int, df: pd.DataFrame):
         
         # Insert into database
         try:
-            # First, check if we need to delete any existing orders for this project
-            existing = supabase.table("salla_orders").select("id").eq("project_id", project_id).execute()
-            existing_count = len(existing.data) if existing.data else 0
+            # First, check if the salla_orders table exists and has the expected schema
+            try:
+                print("Checking if salla_orders table exists...")
+                table_info = supabase.table("salla_orders").select("id").limit(1).execute()
+                print(f"Table check result: {table_info}")
+            except Exception as table_e:
+                print(f"ERROR: Issue with table access. Table may not exist: {str(table_e)}")
+                # Let's create the table if it doesn't exist
+                try:
+                    print("Attempting to create salla_orders table...")
+                    # This would typically be done via migrations, but for debugging we'll try here
+                    # This is just a diagnostic message - the actual table creation would be done
+                    # through Supabase dashboard or migration scripts
+                    print("IMPORTANT: Please create the salla_orders table in Supabase with these columns:")
+                    print("- id (auto-incrementing primary key)")
+                    print("- project_id (integer, required)")
+                    print("- order_id (text)")
+                    print("- status (text)")
+                    print("- total_amount (numeric)")
+                    print("- currency (text)")
+                    print("- item_name (text)")
+                    print("- item_quantity (numeric)")
+                    print("- payment_method (text)")
+                    print("- order_date (timestamp)")
+                    print("- created_at (timestamp with default now())")
+                    
+                    # Return error message since we can't create the table here
+                    return {
+                        "success": False,
+                        "error": "salla_orders table does not exist",
+                        "message": "Please create the salla_orders table in Supabase"
+                    }
+                except Exception as create_e:
+                    print(f"Failed to create table: {str(create_e)}")
+                    raise create_e
             
-            if existing_count > 0:
-                print(f"Found {existing_count} existing orders for project {project_id}. Replacing them.")
-                supabase.table("salla_orders").delete().eq("project_id", project_id).execute()
-            
-            # Insert the new orders
-            response = supabase.table("salla_orders").insert(clean_rows).execute()
-            
-            if not response.data:
-                raise Exception(f"Insert operation returned no data. Response: {response}")
+            # Check for existing orders for this project
+            try:
+                existing = supabase.table("salla_orders").select("id").eq("project_id", project_id).execute()
+                existing_count = len(existing.data) if existing.data else 0
                 
-            print(f"Successfully saved {len(clean_rows)} Salla orders for project {project_id}")
-            return {
-                "success": True,
-                "count": len(clean_rows),
-                "message": f"Successfully saved {len(clean_rows)} Salla orders",
-                "project_id": project_id,
-                "project_name": project.get("name", "UNKNOWN")
-            }
+                if existing_count > 0:
+                    print(f"Found {existing_count} existing orders for project {project_id}. Replacing them.")
+                    delete_response = supabase.table("salla_orders").delete().eq("project_id", project_id).execute()
+                    print(f"Delete response: {delete_response}")
+            except Exception as del_e:
+                print(f"Error checking/deleting existing orders: {str(del_e)}")
+                # Continue anyway to try the insert
+            
+            # Insert the new orders in smaller batches to avoid payload size limits
+            batch_size = 100  # Process 100 records at a time
+            total_inserted = 0
+            insert_results = []
+            
+            for i in range(0, len(clean_rows), batch_size):
+                batch = clean_rows[i:i+batch_size]
+                print(f"Inserting batch {i//batch_size + 1}/{(len(clean_rows) + batch_size - 1)//batch_size} with {len(batch)} records")
+                
+                try:
+                    batch_response = supabase.table("salla_orders").insert(batch).execute()
+                    insert_results.append(batch_response)
+                    
+                    if batch_response.data:
+                        total_inserted += len(batch_response.data)
+                        print(f"Successfully inserted batch with {len(batch_response.data)} records")
+                    else:
+                        print(f"Warning: Batch insert returned no data. Response: {batch_response}")
+                except Exception as batch_e:
+                    print(f"Error inserting batch: {str(batch_e)}")
+                    # Print the first record that caused issues
+                    if batch:
+                        print(f"First record in problematic batch: {batch[0]}")
+                    # Continue with the next batch
+            
+            if total_inserted > 0:
+                print(f"Successfully saved {total_inserted} Salla orders for project {project_id}")
+                return {
+                    "success": True,
+                    "count": total_inserted,
+                    "message": f"Successfully saved {total_inserted} Salla orders",
+                    "project_id": project_id,
+                    "project_name": project.get("name", "UNKNOWN")
+                }
+            else:
+                raise Exception(f"No records were inserted successfully out of {len(clean_rows)} records")
+            
         except Exception as e:
             error_msg = f"Failed to save orders to database: {str(e)}"
             print(error_msg)

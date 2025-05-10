@@ -33,3 +33,38 @@ def get_project_by_id(project_id: int) -> Optional[Dict[str, Any]]:
     except Exception as e:
         print(f"Error retrieving project {project_id}: {str(e)}")
         return None
+
+
+def get_or_create_project(project_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Find a project by ID or create a new one if it doesn't exist.
+    
+    Args:
+        project_data: Dictionary with project data, must include 'id' if looking up existing project
+        
+    Returns:
+        Dict[str, Any]: The project data, either retrieved or newly created
+    """
+    try:
+        # Check if we have an ID and try to get the project
+        if 'id' in project_data and project_data['id']:
+            existing_project = get_project_by_id(project_data['id'])
+            if existing_project:
+                return existing_project
+        
+        # Create a new project request object
+        from models.schemas import ProjectCreateRequest
+        
+        project_request = ProjectCreateRequest(
+            name=project_data.get('name', 'Untitled Project'),
+            persona=project_data.get('persona', 'Data Analyst'),
+            context=project_data.get('context', ''),
+            industry=project_data.get('industry', 'E-Commerce'),
+            user_id=project_data.get('user_id')
+        )
+        
+        # Insert the new project
+        return insert_project(project_request)
+    except Exception as e:
+        print(f"Error in get_or_create_project: {str(e)}")
+        raise e

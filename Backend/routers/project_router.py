@@ -1,36 +1,59 @@
-from fastapi import APIRouter, HTTPException
-from typing import List, Dict, Any
+from fastapi import APIRouter, HTTPException, Depends, Header
+from typing import List, Dict, Any, Optional
 from models.schemas import ProjectCreateRequest, ProjectResponse
 from supabase_helpers.project import insert_project, get_project_by_id
 from supabase_helpers.messages import get_messages_by_project_id
 from supabase_helpers.salla_order import get_salla_orders_for_project
 from utils.supabase_client import get_supabase_client
+from auth.auth_handler import get_current_user
 
 router = APIRouter()
 
 @router.post("/api/projects", response_model=ProjectResponse)
-def create_project(project: ProjectCreateRequest):
+async def create_project(project: ProjectCreateRequest, user: Dict = Depends(get_current_user)):
     try:
+        print(f"Creating project with data: {project.dict()}")
+        print(f"Authenticated user: {user}")
+        
+        # Always use the user_id from the token for security
+        project.user_id = user["user_id"]
+        print(f"Setting project user_id to: {project.user_id}")
+        
         saved_project = insert_project(project)
+        print(f"Project created successfully: {saved_project}")
         return saved_project
     except Exception as e:
+        print(f"Error creating project: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating project: {str(e)}")
         
 @router.get("/api/projects", response_model=List[ProjectResponse])
-def get_projects():
+async def get_projects(user: Dict = Depends(get_current_user)):
     """
-    Retrieve all projects from the database.
+    Retrieve projects from the database, filtered by user_id from authentication token.
     """
     try:
         # Get Supabase client
         supabase = get_supabase_client()
         
-        # Query the projects table
-        response = supabase.table('projects').select("*").order("created_at", desc=True).execute()
+        # Get user_id from token
+        user_id = user["user_id"]
+        print(f"Fetching projects for user: {user_id}")
+        
+        # Query the projects table with explicit user_id filter
+        response = supabase.table('projects')\
+            .select("*")\
+            .eq("user_id", user_id)\
+            .order("created_at", desc=True)\
+            .execute()
         
         # Check if we have data
         if not response.data:
+            print(f"No projects found for user: {user_id}")
             return []
+        
+        print(f"Found {len(response.data)} projects for user: {user_id}")
+        for project in response.data:
+            print(f"Project: {project['id']} - User: {project.get('user_id', 'None')}")
             
         return response.data
     except Exception as e:

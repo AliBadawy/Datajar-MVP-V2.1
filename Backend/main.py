@@ -54,7 +54,11 @@ class ChatMessage(BaseModel):
 async def chat(message: ChatMessage):
     return {"response": f"Echo: {message.content}"}
 
-# Add a health check endpoint
+# Add health check endpoints
 @app.get("/")
-async def health_check():
+async def root():
     return {"status": "Backend server is running"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "datajar-backend"}
