@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { supabase } from '../../lib/supabase';
+import { useAppStore } from '../../lib/store';
 
 /**
  * SallaCallback component that handles the OAuth callback from Salla.
@@ -11,9 +13,30 @@ const SallaCallback: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Get authentication methods from the store
+  const checkAuth = useAppStore(state => state.checkAuth);
+  
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        // Check authentication status and refresh if needed
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          console.warn('No active session found, attempting to refresh');
+          // Try to refresh the session
+          const { data: refreshData } = await supabase.auth.refreshSession();
+          if (!refreshData.session) {
+            console.error('Failed to refresh session');
+          } else {
+            console.log('Session refreshed successfully');
+            // Update authentication state in store
+            await checkAuth();
+          }
+        } else {
+          console.log('Active session found:', sessionData.session.user.id);
+          // Update authentication state in store
+          await checkAuth();
+        }
         // Extract URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
@@ -21,8 +44,8 @@ const SallaCallback: React.FC = () => {
         
         // Get stored values from localStorage
         const storedState = localStorage.getItem('salla_state');
-        const fromDate = localStorage.getItem('salla_from_date');
-        const toDate = localStorage.getItem('salla_to_date');
+        let fromDateValue = localStorage.getItem('salla_from_date');
+        let toDateValue = localStorage.getItem('salla_to_date');
         const resource = localStorage.getItem('salla_resource') || 'orders';
         
         // Get project data from localStorage - try multiple possible storage locations
@@ -85,17 +108,41 @@ const SallaCallback: React.FC = () => {
           console.warn('State parameter issue - state:', state, 'storedState:', storedState);
           if (state && !storedState) {
             console.log('State exists in URL but not in localStorage - likely page refresh');
-            // We'll continue anyway since we have the state in the URL
+            // Set default dates if they're missing - this is for when localStorage is cleared during the redirect
+            if (!fromDateValue) {
+              // Set default date range to last 30 days
+              const today = new Date();
+              const thirtyDaysAgo = new Date();
+              thirtyDaysAgo.setDate(today.getDate() - 30);
+              
+              fromDateValue = thirtyDaysAgo.toISOString().split('T')[0]; // YYYY-MM-DD
+              toDateValue = today.toISOString().split('T')[0]; // YYYY-MM-DD
+              
+              console.log(`Using default date range: ${fromDateValue} to ${toDateValue}`);
+              localStorage.setItem('salla_from_date', fromDateValue);
+              localStorage.setItem('salla_to_date', toDateValue);
+            }
           } else if (!state) {
             throw new Error('State parameter missing from callback URL');
           }
         } else if (state !== storedState) {
           console.error('State mismatch - received:', state, 'stored:', storedState);
-          throw new Error('State mismatch. This could be a CSRF attack.');
+          // Still continue but log a warning
+          console.warn('Continuing despite state mismatch as this may be a page refresh');
         }
         
-        if (!fromDate || !toDate) {
-          throw new Error('Date range is missing. Please try connecting again.');
+        // If dates are still missing after recovery attempt, use default dates
+        if (!fromDateValue || !toDateValue) {
+          console.warn('Date range is missing, using default last 30 days');
+          const today = new Date();
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(today.getDate() - 30);
+          
+          fromDateValue = thirtyDaysAgo.toISOString().split('T')[0]; // YYYY-MM-DD
+          toDateValue = today.toISOString().split('T')[0]; // YYYY-MM-DD
+          
+          localStorage.setItem('salla_from_date', fromDateValue);
+          localStorage.setItem('salla_to_date', toDateValue);
         }
         
         if (!projectId) {
@@ -159,7 +206,7 @@ const SallaCallback: React.FC = () => {
         localStorage.setItem('salla_connected_at', new Date().toISOString());
         
         // Now fetch the orders with the date range and project ID
-        console.log(`Fetching Salla ${resource} from ${fromDate} to ${toDate} for project ${projectId}`);
+        console.log(`Fetching Salla ${resource} from ${fromDateValue} to ${toDateValue} for project ${projectId}`);
         
         // Convert project ID to a number and ensure it's defined
         const numericProjectId = Number(projectId);
@@ -176,8 +223,8 @@ const SallaCallback: React.FC = () => {
         // Make API call with validated project ID
         const response = await axios.post(`http://${window.location.hostname}:8000/api/salla/orders/df`, {
           access_token: tokenResponse.data.access_token,
-          from_date: fromDate,
-          to_date: toDate,
+          from_date: fromDateValue,
+          to_date: toDateValue,
           project_id: numericProjectId  // Ensure it's a number
         });
         

@@ -1,15 +1,18 @@
 import axios from "axios";
+import { supabase } from "./supabase";
 
 export interface ProjectCreateRequest {
   name: string;
   persona: string;
   context: string;
   industry: string;
+  user_id?: string; // Add user_id field to associate with Supabase user
 }
 
 export interface ProjectResponse extends ProjectCreateRequest {
   id: number;
   created_at: string;
+  user_id?: string; // Ensure user_id is also in the response
 }
 
 export interface MessageResponse {
@@ -37,27 +40,48 @@ export interface ProjectContextResponse {
 // Base API URL
 const API_URL = "http://localhost:8000";
 
+// Create authenticated axios instance
+const createAuthenticatedRequest = async () => {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  
+  return axios.create({
+    baseURL: API_URL,
+    headers: token ? {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    } : {
+      'Content-Type': 'application/json'
+    }
+  });
+};
+
 export async function createProject(projectData: ProjectCreateRequest): Promise<ProjectResponse> {
-  const response = await axios.post(`${API_URL}/api/projects`, projectData);
+  const api = await createAuthenticatedRequest();
+  const response = await api.post(`/api/projects`, projectData);
   return response.data;
 }
 
 export async function getProjects(): Promise<ProjectResponse[]> {
-  const response = await axios.get(`${API_URL}/api/projects`);
+  const api = await createAuthenticatedRequest();
+  const response = await api.get(`/api/projects`);
   return response.data;
 }
 
 export async function getProject(id: number): Promise<ProjectResponse> {
-  const response = await axios.get(`${API_URL}/api/projects/${id}`);
+  const api = await createAuthenticatedRequest();
+  const response = await api.get(`/api/projects/${id}`);
   return response.data;
 }
 
 export async function fetchMessages(projectId: number | string, page: number = 1, limit: number = 100): Promise<MessageResponse[]> {
-  const response = await axios.get(`${API_URL}/api/messages/${projectId}?page=${page}&limit=${limit}`);
+  const api = await createAuthenticatedRequest();
+  const response = await api.get(`/api/messages/${projectId}?page=${page}&limit=${limit}`);
   return response.data.messages;
 }
 
 export async function getProjectContext(projectId: number | string): Promise<ProjectContextResponse> {
-  const response = await axios.get(`${API_URL}/api/project/${projectId}/context`);
+  const api = await createAuthenticatedRequest();
+  const response = await api.get(`/api/project/${projectId}/context`);
   return response.data;
 }

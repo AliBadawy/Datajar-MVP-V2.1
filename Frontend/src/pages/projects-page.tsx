@@ -1,26 +1,67 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowRight } from 'lucide-react';
 import { useAppStore } from '../lib/store';
 import { Button } from '../components/ui/button';
 import { formatDate } from '../lib/utils';
+import { fetchProjectsForUser } from '../lib/queries';
+import type { Project } from '../lib/store';
 
 export function ProjectsPage() {
-  const { projects, loadProjects, isLoading, error, setCurrentProject } = useAppStore();
+  // State for direct Supabase query approach
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Still use Zustand store for setting current project
+  const { setCurrentProject } = useAppStore();
   const navigate = useNavigate();
   
-  // Fetch projects when component mounts
+  // Fetch projects directly from Supabase when component mounts
   useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
+    async function loadUserProjects() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Use direct Supabase query through our helper function
+        const userProjects = await fetchProjectsForUser();
+        setProjects(userProjects);
+        
+        console.log(`Loaded ${userProjects.length} projects for user`);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load projects');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadUserProjects();
+  }, []); // Empty dependency array to run only on mount
   
   const handleCreateProject = () => {
     navigate('/setup-project');
   };
   
   const handleSelectProject = (projectId: string) => {
+    // Still use the store to set current project for other components
     setCurrentProject(projectId);
     navigate(`/chat/${projectId}`);
+  };
+  
+  // Function to retry loading if there was an error
+  const handleRetryLoading = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const userProjects = await fetchProjectsForUser();
+      setProjects(userProjects);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load projects');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -51,7 +92,7 @@ export function ProjectsPage() {
             <p className="text-red-700">{error}</p>
             <Button 
               className="mt-4 bg-red-100 hover:bg-red-200 text-red-800 border-red-300"
-              onClick={() => loadProjects()}
+              onClick={handleRetryLoading}
             >
               Try Again
             </Button>

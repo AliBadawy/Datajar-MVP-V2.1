@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { useAppStore } from '../../lib/store';
+import { supabase } from '../../lib/supabase';
 
 interface SallaDialogProps {
   projectName: string;
@@ -61,33 +62,62 @@ interface SallaConnectModalProps {
 
 function SallaConnectModal({ onClose, projectData }: SallaConnectModalProps) {
   const [resource, setResource] = useState("orders"); // Only "orders" for now
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  
+  // Set default date range to last 30 days
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  
+  const [fromDate, setFromDate] = useState(thirtyDaysAgo.toISOString().split('T')[0]);
+  const [toDate, setToDate] = useState(today.toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Get the createProject action from the store
+  const createProjectInStore = useAppStore(state => state.createProject);
 
   const handleStartAuth = async () => {
     try {
+      // Validate date range
+      if (!fromDate || !toDate) {
+        setError("Please select a date range");
+        return;
+      }
+      
+      // Validate that from date is before to date
+      if (new Date(fromDate) > new Date(toDate)) {
+        setError("From date must be before To date");
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
       
       // Generate a secure random state string
       const state = crypto.randomUUID();
       
-      // First, create the project in the database
+      // First, create the project in the database using our store action
+      // This will use the authenticated API client
       console.log('Creating project with data:', projectData);
       
-      const createProjectResponse = await axios.post(`http://${window.location.hostname}:8000/api/projects`, {
+      // Use createProject from the store which handles authentication
+      // The store will automatically add the user_id from Supabase
+      const projectId = await createProjectInStore({
         name: projectData.projectName,
         persona: projectData.persona,
         context: projectData.context,
         industry: projectData.industry
       });
       
-      console.log('Project created successfully:', createProjectResponse.data);
+      // Debug session information
+      try {
+        const session = await supabase.auth.getSession();
+        console.log('Current session before redirect:', session);
+      } catch (e) {
+        console.error('Error checking session:', e);
+      }
       
-      // Get the project ID from the response
-      const projectId = createProjectResponse.data.id;
+      console.log('Project created successfully with ID:', projectId);
       
       if (!projectId) {
         throw new Error('Failed to get project ID from server response');
@@ -96,7 +126,18 @@ function SallaConnectModal({ onClose, projectData }: SallaConnectModalProps) {
       // Save the project ID and data in multiple locations to ensure it's available after redirect
       localStorage.setItem("current_project_id", String(projectId));
       localStorage.setItem("projectId", String(projectId));
-      localStorage.setItem("project_data", JSON.stringify(createProjectResponse.data));
+      
+      // Create a simplified project data object since we don't have the full response object
+      const projectDataToStore = {
+        id: projectId,
+        name: projectData.projectName,
+        persona: projectData.persona,
+        context: projectData.context,
+        industry: projectData.industry,
+        created_at: new Date().toISOString()
+      };
+      
+      localStorage.setItem("project_data", JSON.stringify(projectDataToStore));
       localStorage.setItem("project_form_data", JSON.stringify({
         ...projectData,
         id: projectId
@@ -108,11 +149,29 @@ function SallaConnectModal({ onClose, projectData }: SallaConnectModalProps) {
       localStorage.setItem("salla_to_date", toDate);
       localStorage.setItem("salla_resource", resource);
 
+      // Get current session to ensure we're authenticated before redirect
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.warn('No active session before redirect! This could cause auth issues.');
+      } else {
+        console.log('Active session before redirect:', sessionData.session.user.id);
+      }
+      
+      // Make sure the redirect URI uses the current hostname
+      let redirectUri = import.meta.env.VITE_SALLA_REDIRECT_URI;
+      // If the redirect URI doesn't match the current hostname, use the current origin
+      if (!redirectUri.includes(window.location.hostname)) {
+        const callbackPath = new URL(redirectUri).pathname;
+        redirectUri = `${window.location.origin}${callbackPath}`;
+        console.log('Adjusted redirect URI to current origin:', redirectUri);
+      }
+      
       // Build the full Salla OAuth2 authorization URL
-      const authUrl = `${import.meta.env.VITE_SALLA_AUTH_URL}?client_id=${import.meta.env.VITE_SALLA_CLIENT_ID}&redirect_uri=${import.meta.env.VITE_SALLA_REDIRECT_URI}&response_type=code&scope=offline_access orders.read&state=${state}`;
+      const authUrl = `${import.meta.env.VITE_SALLA_AUTH_URL}?client_id=${import.meta.env.VITE_SALLA_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=offline_access orders.read&state=${state}`;
 
-      // Log for debugging in development
+      // Log for debugging
       console.log('Project created with ID:', projectId);
+      console.log('From date:', fromDate, 'To date:', toDate);
       console.log('Redirecting to Salla OAuth URL:', authUrl);
 
       // Redirect the user to Salla to authorize
