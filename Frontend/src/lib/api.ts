@@ -37,8 +37,8 @@ export interface ProjectContextResponse {
   };
 }
 
-// Base API URL
-const API_URL = "http://localhost:8000";
+// Base API URL - Using environment variable for deployment flexibility
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 // Create authenticated axios instance
 const createAuthenticatedRequest = async () => {
