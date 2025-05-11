@@ -3,12 +3,28 @@ import os
 from dotenv import load_dotenv
 import json
 import pandas as pd
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Initialize OpenAI client with lazy loading
+_client = None
+
+def get_client():
+    """Get or initialize the OpenAI client"""
+    global _client
+    if _client is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            logger.error("OPENAI_API_KEY environment variable is not set")
+            raise ValueError("OPENAI_API_KEY environment variable is not set")
+        _client = OpenAI(api_key=api_key)
+    return _client
 
 def classify_user_prompt(prompt: str) -> str:
     """
@@ -25,7 +41,7 @@ def classify_user_prompt(prompt: str) -> str:
         {"role": "user", "content": prompt}
     ]
 
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gpt-3.5-turbo",
         messages=classification_prompt
     )
@@ -55,10 +71,10 @@ def get_openai_response(messages, persona="Data Analyst", industry="E-Commerce",
     # Create a personalized system prompt
     system_content = f"""You are a helpful {persona} assistant specialized in the {industry} industry.
 
-{business_context if business_context else ''}
+    {business_context if business_context else ''}
 
-Provide clear, concise, and actionable insights based on your expertise.
-"""
+    Provide clear, concise, and actionable insights based on your expertise.
+        """
     
     # Add or replace the system message
     has_system = False
@@ -71,7 +87,7 @@ Provide clear, concise, and actionable insights based on your expertise.
     if not has_system:
         messages = [{"role": "system", "content": system_content}] + messages
         
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages
     )
@@ -119,7 +135,7 @@ def generate_pandasai_instruction(messages, df):
         {"role": "user", "content": user_content}
     ]
     
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages_for_generation
     )
@@ -187,7 +203,7 @@ def wrap_pandasai_result_with_gpt(user_prompt, pandas_instruction, pandas_result
         relevant_history = chat_history[:-1][-5:]  # Exclude current message, limit to 5
         messages_for_narrative = [messages_for_narrative[0]] + relevant_history + [messages_for_narrative[1]]
     
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages_for_narrative
     )
