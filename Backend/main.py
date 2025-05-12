@@ -66,8 +66,8 @@ try:
         logger.info("Included analyze_router")
     
     if 'project_router' in locals():
-        app.include_router(project_router)
-        logger.info("Included project_router")
+        app.include_router(project_router, prefix="/api")
+        logger.info("Included project_router with prefix /api")
     
     if 'message_router' in locals():
         app.include_router(message_router)

@@ -9,7 +9,7 @@ from auth.auth_handler import get_current_user
 
 router = APIRouter()
 
-@router.post("/api/projects", response_model=ProjectResponse)
+@router.post("/projects", response_model=ProjectResponse)
 async def create_project(project: ProjectCreateRequest, user: Dict = Depends(get_current_user)):
     try:
         print(f"Creating project with data: {project.dict()}")
@@ -26,7 +26,7 @@ async def create_project(project: ProjectCreateRequest, user: Dict = Depends(get
         print(f"Error creating project: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating project: {str(e)}")
         
-@router.get("/api/projects", response_model=List[ProjectResponse])
+@router.get("/projects", response_model=List[ProjectResponse])
 async def get_projects(user: Dict = Depends(get_current_user)):
     """
     Retrieve projects from the database, filtered by user_id from authentication token.
