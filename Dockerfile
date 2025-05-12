@@ -1,4 +1,4 @@
-# Simple single-stage build for faster Railway deployment
+# Direct build for Railway with explicit paths
 FROM python:3.9-slim
 
 # Set working directory
@@ -10,24 +10,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy just the requirements file first
-ADD ./Backend/requirements.txt .
+# Copy requirements directly from the Backend directory in the repo
+COPY Backend/requirements.txt /app/
 
-# Debug - list all files to see what's here
-RUN ls -la /app
+# List current directory contents for debugging
+RUN echo "Contents of /app:" && ls -la /app
 
-# Install dependencies with prebuilt wheels
+# Install dependencies 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Debug - list files in the Backend directory
-RUN ls -la /
+# Copy the entire Backend directory to the app directory
+COPY Backend/ /app/
 
-# Copy the application code
-ADD ./Backend .
-
-# Debug - show final app structure
-RUN ls -la /app
+# List final directory contents for debugging
+RUN echo "Final contents of /app:" && ls -la /app
 
 # Expose port
 EXPOSE 8000
