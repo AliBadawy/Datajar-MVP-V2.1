@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
+import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
 import { ProjectsPage } from './pages/projects-page';
 import { SetupProjectPage } from './pages/setup-project-page';
@@ -42,8 +43,10 @@ const App = () => {
   return (
     <Router>
       <Header />
-      <main className="pt-16">
-        <Routes>
+      <div className="flex">
+        <Sidebar />
+        <main className="ml-64 flex-1 bg-gray-50 min-h-screen p-6">
+          <Routes>
         {/* Public routes - accessible whether authenticated or not */}
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -56,7 +59,8 @@ const App = () => {
         <Route path="/chat/:projectId" element={user ? <ChatInterface /> : <Navigate to="/signup" replace />} />
         <Route path="/setup-project" element={user ? <SetupProjectPage /> : <Navigate to="/signup" replace />} />
       </Routes>
-      </main>
+        </main>
+      </div>
     </Router>
   );
 };

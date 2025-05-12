@@ -115,11 +115,11 @@ export function ProjectsPage() {
         
         {/* Projects list */}
         {!isLoading && !error && projects.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
             {projects.map((project) => (
               <div 
                 key={project.id} 
-                className="bg-white shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
+                className="bg-white shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer border border-gray-200 max-w-md w-full mx-auto"
                 onClick={() => handleSelectProject(project.id)}
               >
                 <h2 className="text-lg font-semibold mb-2 text-black">{project.name}</h2>
