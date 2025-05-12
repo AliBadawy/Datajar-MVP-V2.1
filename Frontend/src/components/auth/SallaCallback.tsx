@@ -157,10 +157,13 @@ const SallaCallback: React.FC = () => {
         localStorage.removeItem('salla_state');
 
         // First, exchange the code for tokens with detailed error handling
-        console.log(`Sending code exchange request to http://${window.location.hostname}:8000/api/salla/callback`);
+        // Define API URL from environment variables or fallback to localhost
+        const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
+        console.log(`Sending code exchange request to ${API_URL}/api/salla/callback`);
         let tokenResponse;
         try {
-          tokenResponse = await axios.post(`http://${window.location.hostname}:8000/api/salla/callback`, { 
+          console.log(`Using API URL: ${API_URL} for Salla callback request`);
+          tokenResponse = await axios.post(`${API_URL}/api/salla/callback`, { 
             code, 
             state 
           });
@@ -220,8 +223,9 @@ const SallaCallback: React.FC = () => {
         // Store project ID in localStorage for debugging
         localStorage.setItem('last_used_project_id', String(numericProjectId));
         
-        // Make API call with validated project ID
-        const response = await axios.post(`http://${window.location.hostname}:8000/api/salla/orders/df`, {
+        // Make API call with validated project ID - using the API_URL variable defined earlier
+        console.log(`Using API URL: ${API_URL} for Salla orders request`);
+        const response = await axios.post(`${API_URL}/api/salla/orders/df`, {
           access_token: tokenResponse.data.access_token,
           from_date: fromDateValue,
           to_date: toDateValue,
