@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy only requirements first to leverage Docker caching
-COPY requirements.txt .
+# Railway build context starts from the repository root
+COPY Backend/requirements.txt .
 
 # Use binary wheels where possible - critical for pandas/scipy
 ENV PIP_ONLY_BINARY=numpy,pandas,scipy,matplotlib
@@ -35,8 +36,8 @@ COPY --from=builder /wheels /wheels
 RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* \
     && rm -rf /wheels
 
-# Copy application code
-COPY . .
+# Copy application code - from the repository root
+COPY Backend/ .
 
 # Set environment variables
 ENV PORT=8000
