@@ -18,6 +18,9 @@ def health_check():
     """Health check endpoint that doesn't depend on other imports"""
     return {"status": "ok", "message": "API is running"}
 
+# Import traceback for detailed error reporting
+import traceback
+
 # Import routers after setting up basic app functionality
 # This helps avoid crashing the entire app if there's an import error
 try:
@@ -29,6 +32,8 @@ try:
     logger.info("Successfully imported all routers")
 except Exception as e:
     logger.error(f"Error importing routers: {str(e)}")
+    logger.error("Full traceback:")
+    logger.error(traceback.format_exc())
     # Continue app startup even if router imports fail
 
 # Configure CORS to allow communication with frontend
@@ -82,6 +87,8 @@ try:
         logger.info("Included salla_router")
 except Exception as e:
     logger.error(f"Error including routers: {str(e)}")
+    logger.error("Full traceback:")
+    logger.error(traceback.format_exc())
 
 # Define request schema
 class ChatMessage(BaseModel):
