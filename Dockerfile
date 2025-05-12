@@ -1,42 +1,33 @@
-FROM python:3.9-slim AS builder
+# Simple single-stage build for faster Railway deployment
+FROM python:3.9-slim
 
-# Set environment variables for optimal build performance
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+# Set working directory
+WORKDIR /app
 
-# Install system dependencies required for building wheels
-WORKDIR /build
+# Install required system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     gcc \
-    g++ \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements for the build
-COPY Backend/requirements.txt .
+# Copy just the requirements file first
+ADD ./Backend/requirements.txt .
 
-# Use binary wheels where possible - critical for pandas/scipy
-ENV PIP_ONLY_BINARY=numpy,pandas,scipy,matplotlib
+# Debug - list all files to see what's here
+RUN ls -la /app
 
-# Build wheels for dependencies
-RUN pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
+# Install dependencies with prebuilt wheels
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Final image
-FROM python:3.9-slim
+# Debug - list files in the Backend directory
+RUN ls -la /
 
-# Copy wheels from builder stage
-WORKDIR /app
-COPY --from=builder /wheels /wheels
+# Copy the application code
+ADD ./Backend .
 
-# Install dependencies from pre-built wheels
-RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* \
-    && rm -rf /wheels
-
-# Copy application code
-COPY Backend/ .
+# Debug - show final app structure
+RUN ls -la /app
 
 # Expose port
 EXPOSE 8000
