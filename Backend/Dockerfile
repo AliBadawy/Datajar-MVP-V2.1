@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy only requirements first to leverage Docker caching
+# Railway is already starting in the Backend directory
 COPY requirements.txt .
 
 # Use binary wheels where possible - critical for pandas/scipy
@@ -36,6 +37,7 @@ RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* \
     && rm -rf /wheels
 
 # Copy application code
+# Railway is already starting in the Backend directory
 COPY . .
 
 # Set environment variables
