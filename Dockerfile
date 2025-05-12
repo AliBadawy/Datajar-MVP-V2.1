@@ -1,23 +1,45 @@
-FROM python:3.12-slim
+FROM python:3.9-slim AS builder
 
-# Set working directory
+# Set environment variables for optimal build performance
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies required for building wheels
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    g++ \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements for the build
+COPY Backend/requirements.txt .
+
+# Use binary wheels where possible - critical for pandas/scipy
+ENV PIP_ONLY_BINARY=numpy,pandas,scipy,matplotlib
+
+# Build wheels for dependencies
+RUN pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
+
+# Final image
+FROM python:3.9-slim
+
+# Copy wheels from builder stage
 WORKDIR /app
+COPY --from=builder /wheels /wheels
 
-# Add a timestamp comment to invalidate cache
-# Update: 2025-05-10 18:57
+# Install dependencies from pre-built wheels
+RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* \
+    && rm -rf /wheels
 
-# Copy requirements.txt first for better caching
-COPY Backend/requirements.txt ./
-
-# Install dependencies with version verification
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip freeze | grep pandasai
-
-# Copy the rest of the backend code
-COPY Backend/ ./
+# Copy application code
+COPY Backend/ .
 
 # Expose port
 EXPOSE 8000
 
-# Command to run the application
+# Run the application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}"]
