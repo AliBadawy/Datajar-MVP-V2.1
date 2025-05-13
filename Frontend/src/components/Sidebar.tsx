@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
 import { Menu, X, Plus } from "lucide-react";
 
 import { useAppStore } from '../lib/store';
