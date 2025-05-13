@@ -1,0 +1,48 @@
+# Global build settings
+[build]
+  base = "/Frontend/"
+  publish = "dist/"
+  command = "npm run build"
+  functions = "netlify/functions/"
+
+# Production context settings
+[context.production]
+  environment = { NODE_VERSION = "18" }
+
+# Deploy preview settings
+[context.deploy-preview]
+  command = "npm run build"
+  environment = { NODE_VERSION = "18" }
+
+# Branch deploy settings (for dev/staging branches)
+[context.branch-deploy]
+  command = "npm run build"
+  environment = { NODE_VERSION = "18" }
+
+# Asset optimization
+[build.processing]
+  skip_processing = false
+[build.processing.css]
+  bundle = true
+  minify = true
+[build.processing.js]
+  bundle = true
+  minify = true
+[build.processing.images]
+  compress = true
+
+# SPA redirect rule
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://datajar-mvp-v21-production.up.railway.app https://accounts.salla.sa https://api.salla.dev;"
