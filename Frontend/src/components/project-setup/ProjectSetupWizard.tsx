@@ -289,7 +289,7 @@ export default function ProjectSetupWizard() {
       <div className="flex justify-between mt-8">
         {step > 0 ? (
           <button 
-            className="flex items-center text-sm font-medium text-gray-600 hover:text-black transition-colors"
+            className="flex items-center bg-black text-white px-3 py-1 rounded-md hover:bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleBack}
             disabled={isSubmitting}
           >
