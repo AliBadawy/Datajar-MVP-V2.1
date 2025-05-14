@@ -68,3 +68,30 @@ def get_or_create_project(project_data: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         print(f"Error in get_or_create_project: {str(e)}")
         raise e
+
+
+def update_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
+    """
+    Update a project's metadata in Supabase.
+    
+    Args:
+        project_id: The ID of the project to update
+        metadata: Dictionary containing metadata to update
+        
+    Returns:
+        bool: True if update was successful, False otherwise
+    """
+    try:
+        supabase = get_supabase_client()
+        response = supabase.table("projects").update(metadata).eq("id", project_id).execute()
+        
+        # Check if the update was successful
+        if response and response.data:
+            print(f"Successfully updated metadata for project {project_id}")
+            return True
+        else:
+            print(f"Failed to update metadata for project {project_id}")
+            return False
+    except Exception as e:
+        print(f"Error updating project metadata: {str(e)}")
+        return False
