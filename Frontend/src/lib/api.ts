@@ -82,6 +82,6 @@ export async function fetchMessages(projectId: number | string, page: number = 1
 
 export async function getProjectContext(projectId: number | string): Promise<ProjectContextResponse> {
   const api = await createAuthenticatedRequest();
-  const response = await api.get(`/api/project/${projectId}/context`);
+  const response = await api.get(`/api/projects/${projectId}/context`);
   return response.data;
 }
