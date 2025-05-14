@@ -34,6 +34,7 @@ const ChatInterface: React.FC = () => {
   const loadProjectContext = useAppStore(state => state.loadProjectContext);
   const addMessage = useAppStore(state => state.addMessage);
   const setCurrentProject = useAppStore(state => state.setCurrentProject);
+  const clearMessages = useAppStore(state => state.clearMessages);
   
   // Memoize the state info to prevent unnecessary re-renders
   const stateInfo = useMemo(() => ({
@@ -104,15 +105,17 @@ const ChatInterface: React.FC = () => {
     }
   }, [projectId, currentProjectId, navigate]);
   
-  // Handle data fetching in a separate effect with a ref to track loaded project ID
-  const loadedProjectIdRef = useRef<string | null>(null);
-  
+  // Handle data fetching whenever component mounts or projectId changes - ensure reliable message loading
   useEffect(() => {
-    // Only fetch if we have a project ID and it's different from the last one we loaded
-    if (projectId && loadedProjectIdRef.current !== projectId) {
+    // Always fetch fresh data when the component mounts or when project ID changes
+    if (projectId) {
       console.log('Loading full context for project:', projectId);
       
-      // Use the new loadProjectContext function to load everything at once
+      // Clear messages first to avoid showing stale messages
+      // This ensures we don't see old messages while loading
+      clearMessages();
+      
+      // Load everything at once
       loadProjectContext(projectId).catch(error => {
         console.error('Failed to load project context:', error);
         setIsError(`Failed to load project context: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -120,15 +123,13 @@ const ChatInterface: React.FC = () => {
         // Fall back to just fetching messages if the full context fails
         safelyFetchMessages(projectId);
       });
-      
-      loadedProjectIdRef.current = projectId; // Store the project ID we've loaded
     }
     
-    // Cleanup function
+    // Cleanup function when component unmounts or projectId changes
     return () => {
-      // Nothing to clean up, but this helps React optimize the effect
+      console.log('Cleaning up chat component resources');
     };
-  }, [projectId, loadProjectContext, safelyFetchMessages]); // Added loadProjectContext to dependencies
+  }, [projectId, loadProjectContext, safelyFetchMessages]); // Simplified dependencies
 
   // Format data for analysis using stored dataframe
   const getDataForAnalysis = () => {
