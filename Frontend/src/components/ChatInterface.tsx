@@ -161,7 +161,8 @@ const ChatInterface: React.FC = () => {
     
     try {
       // Call the analyze endpoint with full context
-      const analyzeResponse = await axios.post(`http://${window.location.hostname}:8000/api/analyze`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const analyzeResponse = await axios.post(`${API_URL}/api/analyze`, {
         messages: [
           { role: "user", content: userMessage }
         ],
