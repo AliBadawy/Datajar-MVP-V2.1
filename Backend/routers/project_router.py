@@ -81,7 +81,7 @@ def get_project(project_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching project: {str(e)}")
         
-@router.get("/api/project/{project_id}/context")
+@router.get("/api/projects/{project_id}/context")
 def get_project_context(project_id: int):
     """
     Retrieve the full context for a project including:
