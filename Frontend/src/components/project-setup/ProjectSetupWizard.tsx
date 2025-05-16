@@ -246,10 +246,10 @@ export default function ProjectSetupWizard() {
             
             <div className="mb-6 border-t border-gray-200 pt-6">
               {/* Collapsible Analytics Tools Section */}
-              <div>
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                 <button 
                   onClick={() => setAnalyticsExpanded(!analyticsExpanded)}
-                  className="flex w-full items-center justify-between text-lg font-semibold text-gray-800 mb-3 focus:outline-none"
+                  className="flex w-full items-center justify-between text-lg font-semibold text-black mb-3 focus:outline-none"
                 >
                   <span>Connect with Analytics Tools</span>
                   <svg 
@@ -265,7 +265,7 @@ export default function ProjectSetupWizard() {
                 
                 {analyticsExpanded && (
                   <div className="mt-3 pl-1 pr-1 pb-2 animate-fadeIn">
-                    <p className="text-sm text-gray-600 mb-4">Connect your analytics platforms to gain deeper insights</p>
+                    <p className="text-sm text-black mb-4">Connect your analytics platforms to gain deeper insights</p>
                     
                     <div className="flex flex-col space-y-3">
                       {/* Google Analytics Integration - Coming Soon */}
