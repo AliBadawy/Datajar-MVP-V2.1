@@ -154,12 +154,18 @@ export default function ProjectSetupWizard() {
     }
   };
   
-  // Add effect to trigger analysis on step 6
+  // Log project ID state for debugging
   useEffect(() => {
-    if (step === 5 && projectId && !analysisComplete) {
+    console.log(`🔍 Current step: ${step}, Project ID: ${projectId}, Analysis complete: ${analysisComplete}`);
+  }, [step, projectId, analysisComplete]);
+  
+  // Add effect to trigger analysis on step 5 (analysis step)
+  useEffect(() => {
+    if (step === 5 && projectId && !analysisComplete && !isAnalyzing) {
+      console.log(`🚀 Auto-triggering analysis for project ${projectId} on step ${step}`);
       triggerProjectAnalysis();
     }
-  }, [step, projectId, analysisComplete]);
+  }, [step, projectId, analysisComplete, isAnalyzing]);
 
   const handleFinish = async () => {
     setIsSubmitting(true);
@@ -168,14 +174,22 @@ export default function ProjectSetupWizard() {
     try {
       // In step 4, start analysis when clicking Next
       if (step === 4) {
+        console.log("🔄 Moving to analysis step with projectId:", projectId);
         // Project is already created, just move to the analysis step
         setStep(step + 1);
+      } else if (step === 5) {
+        // For the final step, store project ID in localStorage and redirect to chat
+        console.log("✅ Setup complete! Navigating to chat with projectId:", projectId);
         
-        // Automatically trigger analysis
-        setTimeout(() => triggerProjectAnalysis(), 500);
-      } else {
-        // For the final step, redirect to chat
-        navigate("/chat");
+        if (!projectId) {
+          throw new Error("Missing project ID. Cannot complete setup.");
+        }
+        
+        // Store the project ID for the chat page
+        localStorage.setItem('lastProjectId', projectId as string);
+        
+        // Navigate to the chat page with project ID
+        navigate(`/chat?project=${projectId}`);
       }
     } catch (error) {
       console.error('Error during finish step:', error);
