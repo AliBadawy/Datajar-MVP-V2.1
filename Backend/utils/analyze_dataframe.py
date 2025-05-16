@@ -9,6 +9,34 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+def ensure_json_serializable(obj):
+    """
+    Ensure an object is JSON serializable by converting non-serializable types.
+    
+    Args:
+        obj: Any Python object
+        
+    Returns:
+        JSON-serializable version of the object
+    """
+    if obj is None:
+        return None
+    elif isinstance(obj, (int, float, str, bool)):
+        return obj
+    elif isinstance(obj, (np.int64, np.int32, np.int16, np.int8)):
+        return int(obj)
+    elif isinstance(obj, (np.float64, np.float32, np.float16)):
+        return float(obj)
+    elif isinstance(obj, (np.ndarray, list, tuple)):
+        return [ensure_json_serializable(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {str(k): ensure_json_serializable(v) for k, v in obj.items()}
+    elif hasattr(obj, 'isoformat'):  # datetime
+        return obj.isoformat()
+    else:
+        # For any other type, convert to string
+        return str(obj)
+
 def analyze_dataframe(df: pd.DataFrame) -> Dict[str, Any]:
     """
     Analyze a pandas DataFrame and extract comprehensive metadata.
