@@ -146,7 +146,7 @@ export default function ProjectSetupWizard() {
     }
   };
 
-  // Add analysis trigger function
+  // Analysis trigger function with improved error handling
   const triggerProjectAnalysis = async () => {
     setIsAnalyzing(true);
     setAnalysisError(null);
@@ -156,6 +156,13 @@ export default function ProjectSetupWizard() {
       if (!projectId) {
         throw new Error("Project ID is missing. Cannot analyze without a project ID.");
       }
+      
+      // Provide additional diagnostic information
+      console.log("Project details before analysis:", {
+        projectId,
+        projectIdType: typeof projectId,
+        step
+      });
       
       const result = await analyzeProject(projectId);
       console.log("✅ Analysis completed successfully:", result);
@@ -168,10 +175,22 @@ export default function ProjectSetupWizard() {
         status: err?.response?.status,
         error: err 
       });
-      setAnalysisError(`❌ Failed to analyze your project data: ${errorMessage}`);
+      
+      // Display a more user-friendly error message with retry option
+      setAnalysisError(`❌ Analysis failed: ${errorMessage}`);
+      
+      // Mark as complete even though it failed, to prevent retries
+      setAnalysisComplete(false);
     } finally {
       setIsAnalyzing(false);
     }
+  };
+  
+  // Function to manually retry analysis if it failed
+  const retryAnalysis = () => {
+    setAnalysisAttempted(false);
+    setAnalysisError(null);
+    setAnalysisComplete(false);
   };
   
   // Log project ID state for debugging
@@ -179,13 +198,17 @@ export default function ProjectSetupWizard() {
     console.log(`🔍 Current step: ${step}, Project ID: ${projectId}, Analysis complete: ${analysisComplete}`);
   }, [step, projectId, analysisComplete]);
   
-  // Add effect to trigger analysis on step 5 (analysis step)
+  // Track if analysis has been attempted to prevent infinite retries
+  const [analysisAttempted, setAnalysisAttempted] = useState<boolean>(false);
+  
+  // Add effect to trigger analysis on step 5 (analysis step) - only once
   useEffect(() => {
-    if (step === 5 && projectId && !analysisComplete && !isAnalyzing) {
+    if (step === 5 && projectId && !analysisComplete && !isAnalyzing && !analysisAttempted) {
       console.log(`🚀 Auto-triggering analysis for project ${projectId} on step ${step}`);
+      setAnalysisAttempted(true); // Mark that we've tried analysis
       triggerProjectAnalysis();
     }
-  }, [step, projectId, analysisComplete, isAnalyzing]);
+  }, [step, projectId, analysisComplete, isAnalyzing, analysisAttempted]);
 
   const handleFinish = async () => {
     setIsSubmitting(true);
@@ -453,10 +476,10 @@ export default function ProjectSetupWizard() {
               <>
                 <p className="text-red-600 mb-4">{analysisError}</p>
                 <button
-                  onClick={triggerProjectAnalysis}
+                  onClick={retryAnalysis}
                   className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded"
                 >
-                  Retry
+                  Retry Analysis
                 </button>
               </>
             ) : (
