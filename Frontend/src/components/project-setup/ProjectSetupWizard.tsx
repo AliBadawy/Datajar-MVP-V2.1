@@ -62,6 +62,7 @@ export default function ProjectSetupWizard() {
   const [persona, setPersona] = useState('');
   const [context, setContext] = useState('');
   const [industry, setIndustry] = useState('');
+  const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
 
   // Steps array
   const steps = [
@@ -241,6 +242,64 @@ export default function ProjectSetupWizard() {
                 context={context}
                 industry={industry}
               />
+            </div>
+            
+            <div className="mb-6 border-t border-gray-200 pt-6">
+              {/* Collapsible Analytics Tools Section */}
+              <div>
+                <button 
+                  onClick={() => setAnalyticsExpanded(!analyticsExpanded)}
+                  className="flex w-full items-center justify-between text-lg font-semibold text-gray-800 mb-3 focus:outline-none"
+                >
+                  <span>Connect with Analytics Tools</span>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className={`h-5 w-5 transition-transform ${analyticsExpanded ? 'transform rotate-180' : ''}`} 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {analyticsExpanded && (
+                  <div className="mt-3 pl-1 pr-1 pb-2 animate-fadeIn">
+                    <p className="text-sm text-gray-600 mb-4">Connect your analytics platforms to gain deeper insights</p>
+                    
+                    <div className="flex flex-col space-y-3">
+                      {/* Google Analytics Integration - Coming Soon */}
+                      <div className="border border-gray-200 rounded-md p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 flex items-center justify-center rounded-md bg-blue-50">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7 10.9V2.1c0-.6.4-1.1 1-1.1s1 .5 1 1.1v8.8c0 .6-.4 1.1-1 1.1s-1-.5-1-1.1zm4.5 1.5v-9c0-.8.7-1.5 1.5-1.5s1.5.7 1.5 1.5v9c0 .8-.7 1.5-1.5 1.5s-1.5-.7-1.5-1.5zm5-1.5V2.1c0-.6.4-1.1 1-1.1s1 .5 1 1.1v8.8c0 .6-.4 1.1-1 1.1s-1-.5-1-1.1z"/>
+                                <path d="M19.1 20.1c-1 1-2.3 1.7-3.8 1.9-1.4.2-2.9 0-4.2-.7-1.2-.7-2.2-1.7-2.8-2.9-.6-1.3-.8-2.7-.6-4.2.2-1.4.9-2.7 1.9-3.8.5-.5 1.4-.5 1.9 0s.5 1.4 0 1.9c-.6.6-1 1.4-1.2 2.3-.1.9 0 1.8.4 2.6.4.8 1 1.4 1.8 1.8.8.4 1.7.5 2.6.4.9-.1 1.7-.6 2.3-1.2.5-.5 1.4-.5 1.9 0s.5 1.5-.2 1.9z"/>
+                              </svg>
+                            </div>
+                            <div className="ml-3">
+                              <h4 className="text-sm font-medium text-gray-900">Google Analytics</h4>
+                              <p className="text-xs text-gray-500">Track user behavior and website performance</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="mr-3 px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              Coming Soon
+                            </span>
+                            <button 
+                              className="px-3 py-1 rounded-md bg-gray-200 text-gray-500 text-sm font-medium cursor-not-allowed opacity-60"
+                              disabled
+                            >
+                              Connect
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="mt-8 pt-6 border-t border-gray-200">
