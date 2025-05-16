@@ -81,8 +81,41 @@ export default function ProjectSetupWizard() {
     "Processing Data" // New Step
   ];
 
-  const handleNext = () => {
-    if (step < steps.length - 1) {
+  const handleNext = async () => {
+    // Create project after industry selection (step 3) before moving to data import
+    if (step === 3) {
+      setIsSubmitting(true);
+      setSubmitError(null);
+      
+      try {
+        // Create project and store its ID
+        const id = await createProject({
+          name: projectName,
+          persona,
+          context,
+          industry
+        });
+        
+        // Store the project ID for use in subsequent steps
+        setProjectId(id);
+        console.log('Project created with ID:', id);
+        
+        // Move to the next step
+        setStep(step + 1);
+      } catch (error) {
+        console.error('Error creating project:', error);
+        setSubmitError(
+          error instanceof Error 
+            ? error.message 
+            : 'Failed to create the project. Please try again.'
+        );
+        // Don't advance to the next step if project creation failed
+        return;
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else if (step < steps.length - 1) {
+      // For other steps, just move forward
       setStep(step + 1);
     }
   };
@@ -121,31 +154,23 @@ export default function ProjectSetupWizard() {
     setSubmitError(null);
     
     try {
-      // In step 4, create the project when clicking Next
+      // In step 4, start analysis when clicking Next
       if (step === 4) {
-        // Create project and store its ID
-        const id = await createProject({
-          name: projectName,
-          persona,
-          context,
-          industry
-        });
-        
-        // Store the project ID for use in the analysis step
-        setProjectId(id);
-        
-        // Move to the analysis step
+        // Project is already created, just move to the analysis step
         setStep(step + 1);
+        
+        // Automatically trigger analysis
+        setTimeout(() => triggerProjectAnalysis(), 500);
       } else {
         // For the final step, redirect to chat
         navigate("/chat");
       }
     } catch (error) {
-      console.error('Error creating project:', error);
+      console.error('Error during finish step:', error);
       setSubmitError(
         error instanceof Error 
           ? error.message 
-          : 'Failed to create the project. Please try again.'
+          : 'An error occurred. Please try again.'
       );
     } finally {
       setIsSubmitting(false);
@@ -277,6 +302,7 @@ export default function ProjectSetupWizard() {
               <h3 className="text-lg font-semibold text-gray-800 mb-3">Connect E-commerce Store</h3>
               <p className="text-sm text-gray-600 mb-4">Connect your Salla store to analyze your e-commerce data</p>
               <SallaDialog 
+                projectId={projectId || ''} // Pass the projectId to SallaDialog
                 projectName={projectName}
                 persona={persona}
                 context={context}

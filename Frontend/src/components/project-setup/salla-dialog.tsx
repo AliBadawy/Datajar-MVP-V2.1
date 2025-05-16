@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useAppStore } from '../../lib/store';
 import { supabase } from '../../lib/supabase';
 
 interface SallaDialogProps {
+  projectId: string | number; // Add projectId to the interface
   projectName: string;
   persona: string;
   context: string;
@@ -13,7 +13,7 @@ interface SallaDialogProps {
  * SallaDialog component for handling Salla OAuth authentication.
  * This component provides the UI and functionality to connect to a Salla store.
  */
-const SallaDialog: React.FC<SallaDialogProps> = ({ projectName, persona, context, industry }) => {
+const SallaDialog: React.FC<SallaDialogProps> = ({ projectId, projectName, persona, context, industry }) => {
   const [showModal, setShowModal] = useState(false);
   
   /**
@@ -39,6 +39,7 @@ const SallaDialog: React.FC<SallaDialogProps> = ({ projectName, persona, context
       </div>
       
       {showModal && <SallaConnectModal onClose={() => setShowModal(false)} projectData={{
+        projectId, // Pass the existing projectId
         projectName,
         persona,
         context,
@@ -52,6 +53,7 @@ const SallaDialog: React.FC<SallaDialogProps> = ({ projectName, persona, context
 interface SallaConnectModalProps {
   onClose: () => void;
   projectData: {
+    projectId: string | number; // Add projectId to the interface
     projectName: string;
     persona: string;
     context: string;
@@ -72,9 +74,6 @@ function SallaConnectModal({ onClose, projectData }: SallaConnectModalProps) {
   const [toDate, setToDate] = useState(today.toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Get the createProject action from the store
-  const createProjectInStore = useAppStore(state => state.createProject);
 
   const handleStartAuth = async () => {
     try {
@@ -96,18 +95,9 @@ function SallaConnectModal({ onClose, projectData }: SallaConnectModalProps) {
       // Generate a secure random state string
       const state = crypto.randomUUID();
       
-      // First, create the project in the database using our store action
-      // This will use the authenticated API client
-      console.log('Creating project with data:', projectData);
-      
-      // Use createProject from the store which handles authentication
-      // The store will automatically add the user_id from Supabase
-      const projectId = await createProjectInStore({
-        name: projectData.projectName,
-        persona: projectData.persona,
-        context: projectData.context,
-        industry: projectData.industry
-      });
+      // Use the existing projectId instead of creating a new one
+      const { projectId } = projectData;
+      console.log('Using existing project with ID:', projectId);
       
       // Debug session information
       try {
@@ -116,8 +106,6 @@ function SallaConnectModal({ onClose, projectData }: SallaConnectModalProps) {
       } catch (e) {
         console.error('Error checking session:', e);
       }
-      
-      console.log('Project created successfully with ID:', projectId);
       
       if (!projectId) {
         throw new Error('Failed to get project ID from server response');
