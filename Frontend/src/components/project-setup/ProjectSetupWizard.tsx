@@ -246,7 +246,7 @@ export default function ProjectSetupWizard() {
             
             <div className="mb-6 border-t border-gray-200 pt-6">
               {/* Collapsible Analytics Tools Section */}
-              <div className="bg-green-100 p-4 rounded-lg shadow-sm border border-green-200">
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                 <button 
                   onClick={() => setAnalyticsExpanded(!analyticsExpanded)}
                   className="flex w-full items-center justify-between text-lg font-semibold text-black mb-3 focus:outline-none"
@@ -288,7 +288,7 @@ export default function ProjectSetupWizard() {
                               Coming Soon
                             </span>
                             <button 
-                              className="px-3 py-1 rounded-md bg-gray-200 text-gray-500 text-sm font-medium cursor-not-allowed opacity-60"
+                              className="px-3 py-1 rounded-md bg-white border border-gray-200 text-gray-500 text-sm font-medium cursor-not-allowed opacity-60"
                               disabled
                             >
                               Connect
