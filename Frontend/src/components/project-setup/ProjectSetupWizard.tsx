@@ -39,12 +39,20 @@ export default function ProjectSetupWizard() {
     if (savedFormData) {
       try {
         const formData = JSON.parse(savedFormData);
+        console.log('Loading project data from localStorage:', formData);
         
         // Restore form fields
         if (formData.projectName) setProjectName(formData.projectName);
         if (formData.persona) setPersona(formData.persona);
         if (formData.context) setContext(formData.context);
         if (formData.industry) setIndustry(formData.industry);
+        
+        // ✨ CRITICAL: Restore project ID
+        if (formData.projectId || formData.id) {
+          const id = formData.projectId || formData.id;
+          console.log(`🔄 Restoring project ID from localStorage: ${id}`);
+          setProjectId(id);
+        }
         
         // Don't remove the data yet as we might need it if user refreshes
       } catch (error) {
@@ -99,6 +107,18 @@ export default function ProjectSetupWizard() {
         // Store the project ID for use in subsequent steps
         setProjectId(id);
         console.log('Project created with ID:', id);
+        
+        // Save project ID to localStorage to ensure it persists
+        const formData = {
+          projectId: id,
+          projectName,
+          persona,
+          context,
+          industry,
+          lastStep: step
+        };
+        console.log('Saving project data to localStorage:', formData);
+        localStorage.setItem('project_form_data', JSON.stringify(formData));
         
         // Move to the next step
         setStep(step + 1);
