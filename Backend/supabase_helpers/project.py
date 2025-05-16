@@ -116,7 +116,12 @@ def update_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
         if "data_sources" in metadata:
             update_data["data_sources"] = metadata["data_sources"]
             
-        response = supabase.table("projects").update(update_data).eq("id", project_id).execute()
+        # Debug: Output first 500 chars of the update data
+        update_preview = str(update_data)[:500] + '...' if len(str(update_data)) > 500 else str(update_data)
+        logger.info(f"Update data preview: {update_preview}")
+            
+        # Use select() to return the updated row, which helps with debugging
+        response = supabase.table("projects").update(update_data).eq("id", project_id).select().execute()
         
         # Check if the update was successful
         if response and response.data:
