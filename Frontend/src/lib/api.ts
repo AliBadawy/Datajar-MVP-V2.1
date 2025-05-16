@@ -85,3 +85,9 @@ export async function getProjectContext(projectId: number | string): Promise<Pro
   const response = await api.get(`/api/projects/${projectId}/context`);
   return response.data;
 }
+
+export async function analyzeProject(projectId: string | number): Promise<any> {
+  const api = await createAuthenticatedRequest();
+  const res = await api.post(`/api/projects/${projectId}/analyze`);
+  return res.data;
+}

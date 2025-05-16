@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../lib/store';
+import { analyzeProject } from '../../lib/api';
 import SallaDialog from './salla-dialog';
 
 export default function ProjectSetupWizard() {
@@ -12,8 +13,21 @@ export default function ProjectSetupWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   
-  // Step state: 0 → 4
+  // Step state: 0 → 5
   const [step, setStep] = useState(0);
+
+  // Project state
+  const [projectName, setProjectName] = useState('');
+  const [persona, setPersona] = useState('');
+  const [context, setContext] = useState('');
+  const [industry, setIndustry] = useState('');
+  const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
+
+  // Analysis state variables
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Read step from URL parameters and restore form data when component mounts
   useEffect(() => {
@@ -57,20 +71,14 @@ export default function ProjectSetupWizard() {
     }
   }, [location]);
 
-  // Project state
-  const [projectName, setProjectName] = useState('');
-  const [persona, setPersona] = useState('');
-  const [context, setContext] = useState('');
-  const [industry, setIndustry] = useState('');
-  const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
-
   // Steps array
   const steps = [
     "Name Your Project",
     "Select Persona",
     "Add Context",
     "Choose Industry",
-    "Import Your Data"
+    "Import Your Data",
+    "Processing Data" // New Step
   ];
 
   const handleNext = () => {
@@ -85,21 +93,53 @@ export default function ProjectSetupWizard() {
     }
   };
 
+  // Add analysis trigger function
+  const triggerProjectAnalysis = async () => {
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+
+    try {
+      await analyzeProject(projectId as string);
+      setAnalysisComplete(true);
+    } catch (err) {
+      setAnalysisError("❌ Failed to analyze your project data.");
+      console.error('Analysis error:', err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+  
+  // Add effect to trigger analysis on step 6
+  useEffect(() => {
+    if (step === 5 && projectId && !analysisComplete) {
+      triggerProjectAnalysis();
+    }
+  }, [step, projectId, analysisComplete]);
+
   const handleFinish = async () => {
     setIsSubmitting(true);
     setSubmitError(null);
     
     try {
-      // Call the API via our store to create the project
-      await createProject({
-        name: projectName,
-        persona,
-        context,
-        industry
-      });
-      
-      // Redirect to /chat
-      navigate("/chat");
+      // In step 4, create the project when clicking Next
+      if (step === 4) {
+        // Create project and store its ID
+        const id = await createProject({
+          name: projectName,
+          persona,
+          context,
+          industry
+        });
+        
+        // Store the project ID for use in the analysis step
+        setProjectId(id);
+        
+        // Move to the analysis step
+        setStep(step + 1);
+      } else {
+        // For the final step, redirect to chat
+        navigate("/chat");
+      }
     } catch (error) {
       console.error('Error creating project:', error);
       setSubmitError(
@@ -326,6 +366,39 @@ export default function ProjectSetupWizard() {
               </div>
               <p className="text-xs text-gray-500 mt-2">CSV upload functionality will be available soon</p>
             </div>
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className="text-center p-8">
+            {isAnalyzing ? (
+              <>
+                <div className="animate-spin border-4 border-black border-t-transparent rounded-full w-12 h-12 mx-auto mb-4" />
+                <h2 className="text-lg font-medium">Analyzing your data...</h2>
+                <p className="text-gray-600 mt-2">This may take a few seconds</p>
+              </>
+            ) : analysisError ? (
+              <>
+                <p className="text-red-600 mb-4">{analysisError}</p>
+                <button
+                  onClick={triggerProjectAnalysis}
+                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded"
+                >
+                  Retry
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="text-green-500 mb-4 text-xl">✅ Analysis complete!</div>
+                <p className="text-gray-600 mb-5">Your data has been successfully analyzed and is ready for exploration.</p>
+                <button
+                  className="bg-black text-white py-2 px-5 rounded hover:bg-gray-800 transition-colors"
+                  onClick={handleFinish}
+                >
+                  Finish Project Setup
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
