@@ -62,7 +62,6 @@ export default function ProjectSetupWizard() {
   const [persona, setPersona] = useState('');
   const [context, setContext] = useState('');
   const [industry, setIndustry] = useState('');
-  const [file, setFile] = useState<File | null>(null); // Optional for now
 
   // Steps array
   const steps = [
@@ -245,41 +244,28 @@ export default function ProjectSetupWizard() {
             </div>
             
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Upload CSV Data (Optional)</label>
-              <div className="relative border border-dashed border-gray-300 p-6 text-center rounded-md bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+              <div className="flex items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700">Upload CSV Data</label>
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                  Coming Soon
+                </span>
+              </div>
+              <div className="relative border border-dashed border-gray-300 p-6 text-center rounded-md bg-gray-50 opacity-60 pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p className="text-sm text-gray-500 mt-2 mb-1">Drag and drop a CSV file here, or click to select</p>
                 <p className="text-xs text-gray-400">Max file size: 5MB</p>
                 
-                {/* File input is now wrapped in a label for better control */}
-                <label className={`${file ? 'hidden' : 'absolute inset-0 w-full h-full opacity-0 cursor-pointer'}`}>
-                  <input 
-                    type="file" 
-                    className="sr-only"
-                    accept=".csv"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)} 
-                  />
-                </label>
-                
-                {file && (
-                  <div className="mt-3 text-sm text-black font-medium">
-                    <p>Selected: {file.name}</p>
-                    <button 
-                      type="button"
-                      className="mt-2 text-xs text-red-600 hover:text-red-800"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFile(null);
-                      }}
-                    >
-                      Remove file
-                    </button>
-                  </div>
-                )}
+                {/* Disabled file input */}
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  accept=".csv"
+                  disabled
+                />
               </div>
-              <p className="text-xs text-gray-500 mt-2">You can also upload your data later in the chat interface</p>
+              <p className="text-xs text-gray-500 mt-2">CSV upload functionality will be available soon</p>
             </div>
           </div>
         )}
