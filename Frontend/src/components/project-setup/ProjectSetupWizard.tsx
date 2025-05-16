@@ -246,7 +246,7 @@ export default function ProjectSetupWizard() {
             
             <div className="mb-6 border-t border-gray-200 pt-6">
               {/* Collapsible Analytics Tools Section */}
-              <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+              <div className="bg-green-100 p-4 rounded-lg shadow-sm border border-green-200">
                 <button 
                   onClick={() => setAnalyticsExpanded(!analyticsExpanded)}
                   className="flex w-full items-center justify-between text-lg font-semibold text-black mb-3 focus:outline-none"
