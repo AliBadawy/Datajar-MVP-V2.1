@@ -87,17 +87,33 @@ def analyze_project_data(project_id: int):
         })
 
     # Save to Supabase
-    from supabase_helpers.project import update_project_metadata
-    update_result = update_project_metadata(project_id, {
-        "metadata": metadata_results,
-        "data_sources": sources
-    })
-    
-    if not update_result:
-        logger.error(f"Failed to update metadata for project {project_id}")
-        raise HTTPException(status_code=500, detail="Failed to save project metadata")
+    try:
+        from supabase_helpers.project import update_project_metadata
+        logger.info(f"Attempting to save metadata to Supabase for project {project_id}")
+        logger.info(f"Metadata contains {len(metadata_results)} source(s): {sources}")
+        
+        # Debug log the metadata structure (but not all content)
+        for idx, meta in enumerate(metadata_results):
+            logger.info(f"Source {idx+1}: {meta['source']} - {meta['total_rows']} rows, {meta['total_columns']} columns")
+        
+        update_result = update_project_metadata(project_id, {
+            "metadata": metadata_results,
+            "data_sources": sources
+        })
+        
+        if not update_result:
+            logger.error(f"❌ Failed to update metadata for project {project_id} - update_project_metadata returned False")
+            raise HTTPException(status_code=500, detail="Failed to save project metadata: update operation returned False")
+            
+        logger.info(f"✅ Metadata successfully saved to Supabase for project {project_id}")
+    except Exception as e:
+        logger.error(f"❌ Exception when saving metadata to Supabase: {str(e)}")
+        logger.error(f"Exception details: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Failed to save project metadata: {str(e)}")
 
-    logger.info(f"Analysis complete for project {project_id}")
+    logger.info(f"🎉 Analysis complete for project {project_id}")
     
     return {
         "status": "success",

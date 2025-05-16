@@ -132,11 +132,23 @@ export default function ProjectSetupWizard() {
     setAnalysisError(null);
 
     try {
-      await analyzeProject(projectId as string);
+      console.log("⏳ Starting analysis for project ID:", projectId);
+      if (!projectId) {
+        throw new Error("Project ID is missing. Cannot analyze without a project ID.");
+      }
+      
+      const result = await analyzeProject(projectId);
+      console.log("✅ Analysis completed successfully:", result);
       setAnalysisComplete(true);
-    } catch (err) {
-      setAnalysisError("❌ Failed to analyze your project data.");
-      console.error('Analysis error:', err);
+    } catch (err: any) {
+      // Capture detailed error information
+      const errorMessage = err?.response?.data?.detail || err?.message || "Unknown error";
+      console.error('🔴 Analysis error details:', { 
+        message: errorMessage, 
+        status: err?.response?.status,
+        error: err 
+      });
+      setAnalysisError(`❌ Failed to analyze your project data: ${errorMessage}`);
     } finally {
       setIsAnalyzing(false);
     }

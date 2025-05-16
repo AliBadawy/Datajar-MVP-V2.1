@@ -81,17 +81,53 @@ def update_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
     Returns:
         bool: True if update was successful, False otherwise
     """
+    import logging
+    import json
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"Updating metadata for project {project_id}")
+    
     try:
+        # First, check if the metadata can be serialized to JSON
+        try:
+            # Attempt to serialize the metadata to verify it's valid JSON
+            json_string = json.dumps(metadata)
+            logger.info(f"Metadata successfully serialized to JSON ({len(json_string)} characters)")
+        except (TypeError, ValueError, OverflowError) as json_err:
+            logger.error(f"Failed to serialize metadata to JSON: {str(json_err)}")
+            logger.error(f"Metadata keys: {list(metadata.keys())}")
+            
+            # Try to identify problematic fields
+            for key, value in metadata.items():
+                try:
+                    json.dumps({key: value})
+                except Exception as field_err:
+                    logger.error(f"Problem field: '{key}', error: {str(field_err)}")
+            return False
+        
+        # Connect to Supabase and update the project
         supabase = get_supabase_client()
-        response = supabase.table("projects").update(metadata).eq("id", project_id).execute()
+        logger.info(f"Executing Supabase update for project {project_id}")
+        
+        # Format metadata for Supabase
+        update_data = {}
+        if "metadata" in metadata:
+            update_data["metadata"] = metadata["metadata"]
+        if "data_sources" in metadata:
+            update_data["data_sources"] = metadata["data_sources"]
+            
+        response = supabase.table("projects").update(update_data).eq("id", project_id).execute()
         
         # Check if the update was successful
         if response and response.data:
-            print(f"Successfully updated metadata for project {project_id}")
+            logger.info(f"Successfully updated metadata for project {project_id}")
             return True
         else:
-            print(f"Failed to update metadata for project {project_id}")
+            logger.error(f"Failed to update metadata for project {project_id}: No data in response")
+            logger.error(f"Response: {response}")
             return False
     except Exception as e:
-        print(f"Error updating project metadata: {str(e)}")
+        logger.error(f"Exception updating project metadata: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return False
