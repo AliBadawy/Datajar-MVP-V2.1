@@ -33,40 +33,80 @@ def analyze_project_data(project_id: int):
     Returns:
         dict: Analysis metadata for the project data
     """
-    try:
-        logger.info(f"Starting analysis for project {project_id}")
+    logger.info(f"🔍 Starting analysis for project {project_id}")
+    
+    # Check if project exists
+    project = get_project_by_id(project_id)
+    if not project:
+        logger.error(f"Project with ID {project_id} not found")
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Load Salla data if available
+    salla_df = get_salla_orders_for_project(project_id)
+    
+    # TODO: Implement CSV data loading once available
+    # csv_df = get_csv_data_for_project(project_id)
+    csv_df = None
+
+    # Collect all available dataframes
+    dataframes = []
+
+    if salla_df is not None and not salla_df.empty:
+        logger.info(f"Found Salla data for project {project_id} with {len(salla_df)} rows")
+        dataframes.append(("Salla", salla_df))
+
+    if csv_df is not None and not csv_df.empty:
+        logger.info(f"Found CSV data for project {project_id} with {len(csv_df)} rows")
+        dataframes.append(("CSV", csv_df))
+
+    if not dataframes:
+        logger.warning(f"No data available for analysis in project {project_id}")
+        raise HTTPException(status_code=404, detail="No data available for analysis")
+
+    # Process each dataframe and collect metadata
+    metadata_results = []
+    sources = []
+
+    for source_name, df in dataframes:
+        sources.append(source_name)
+        # Use the new analyze_dataframe function
+        from utils.analyze_dataframe import analyze_dataframe
+        result = analyze_dataframe(df)
         
-        # Check if project exists
-        project = get_project_by_id(project_id)
-        if not project:
-            logger.error(f"Project with ID {project_id} not found")
-            raise HTTPException(status_code=404, detail=f"Project with ID {project_id} not found")
-            
-        # Load Salla data if available
-        salla_df = get_salla_orders_for_project(project_id)
-        has_data = salla_df is not None and not salla_df.empty
-        
-        if not has_data:
-            logger.info(f"No data found for project {project_id}")
-            return {"message": f"No data found for project {project_id}", "project_id": project_id}
-            
-        # Analyze the data and store metadata
-        metadata = analyze_and_store_project_data(project_id, salla_df, "Salla")
-        
-        return {
-            "message": "Project data analyzed successfully",
-            "project_id": project_id,
-            "metadata_summary": {
-                "dataframe_count": len(metadata.get("dataframes", [])),
-                "total_rows": sum(df.get("total_rows", 0) for df in metadata.get("dataframes", [])),
-                "total_columns": sum(df.get("total_columns", 0) for df in metadata.get("dataframes", []))
-            }
+        metadata_results.append({
+            "source": source_name,
+            "total_rows": df.shape[0],
+            "total_columns": df.shape[1],
+            "columns": result.get("data_types"),
+            "categorical_data": result.get("categorical_data"),
+            "missing_data": result.get("missing_data"),
+            "head": result.get("head_rows"),
+            "date_parts": result.get("date_parts"),
+            "numerical_stats": result.get("numerical_stats"),
+            "inconsistent_columns": result.get("inconsistent_columns"),
+        })
+
+    # Save to Supabase
+    from supabase_helpers.project import update_project_metadata
+    update_result = update_project_metadata(project_id, {
+        "metadata": metadata_results,
+        "data_sources": sources
+    })
+    
+    if not update_result:
+        logger.error(f"Failed to update metadata for project {project_id}")
+        raise HTTPException(status_code=500, detail="Failed to save project metadata")
+
+    logger.info(f"Analysis complete for project {project_id}")
+    
+    return {
+        "status": "success",
+        "project_id": project_id,
+        "summary": {
+            "sources": sources,
+            "total_rows": sum(df.shape[0] for _, df in dataframes)
         }
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        logger.error(f"Error analyzing project data: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error analyzing project data: {str(e)}")
+    }
 
 @router.post("/api/classify")
 def classify(request: AnalyzeRequest):
