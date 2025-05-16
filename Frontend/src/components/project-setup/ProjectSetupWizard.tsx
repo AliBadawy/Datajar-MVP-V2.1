@@ -249,7 +249,7 @@ export default function ProjectSetupWizard() {
               <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                 <button 
                   onClick={() => setAnalyticsExpanded(!analyticsExpanded)}
-                  className="flex w-full items-center justify-between text-lg font-semibold text-black mb-3 focus:outline-none"
+                  className="flex w-full items-center justify-between text-lg font-semibold text-black mb-3 focus:outline-none bg-white p-2 rounded-md"
                 >
                   <span>Connect with Analytics Tools</span>
                   <svg 
@@ -288,7 +288,7 @@ export default function ProjectSetupWizard() {
                               Coming Soon
                             </span>
                             <button 
-                              className="px-3 py-1 rounded-md bg-white border border-gray-200 text-gray-500 text-sm font-medium cursor-not-allowed opacity-60"
+                              className="px-3 py-1 rounded-md bg-gray-200 text-gray-500 text-sm font-medium cursor-not-allowed opacity-60"
                               disabled
                             >
                               Connect
