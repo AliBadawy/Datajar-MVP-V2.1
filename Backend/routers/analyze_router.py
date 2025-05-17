@@ -33,26 +33,14 @@ def analyze_project_data(project_id: int):
     Returns:
         dict: Static analysis data
     """
-    logger.info(f"🔍 Starting STATIC analysis for project {project_id}")
-    
-    # Check if project exists
-    project = get_project_by_id(project_id)
-    if not project:
-        logger.error(f"Project with ID {project_id} not found")
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    # Return static analysis data
-    logger.info(f"🎉 Returning static analysis data for project {project_id}")
-    
-    # Return static hardcoded data
-    return {
-        "status": "success",
-        "project_id": project_id,
-        "summary": {
-            "sources": ["Salla"],
-            "total_rows": 120
-        },
-        "metadata": {
+    try:
+        # Retrieve project to ensure it exists
+        project = get_project_by_id(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail=f"Project with id {project_id} not found")
+        
+        # Generate static metadata
+        metadata = {
             "analyzed_at": "2025-05-17T12:00:00Z",
             "data_sources": ["Salla"],
             "basic_stats": {
@@ -68,17 +56,39 @@ def analyze_project_data(project_id: int):
                 "status": { "type": "string", "missing": 0 },
             }
         }
-    }
+        
+        # Save the static metadata to Supabase
+        try:
+            from supabase_helpers.project import update_project_metadata
+            logger.info(f"Saving static metadata to Supabase for project {project_id}")
+            
+            # Save metadata to the project's metadata field in Supabase
+            update_result = update_project_metadata(project_id, metadata)
+            
+            if not update_result:
+                logger.warning(f"Failed to update metadata for project {project_id}")
+            else:
+                logger.info(f"✅ Static metadata successfully saved to Supabase for project {project_id}")
+        except Exception as e:
+            logger.error(f"Error saving metadata to Supabase: {str(e)}")
+            # Continue execution even if saving to Supabase fails
+        
+        # Return response with metadata included
+        return {
+            "status": "success",
+            "project_id": project_id,
+            "summary": {
+                "sources": ["Salla"],
+                "total_rows": 120
+            },
+            "metadata": metadata
+        }
+    except Exception as e:
+        logger.error(f"Error in analyze_project_data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error analyzing project data: {str(e)}")
     
-    # Previous implementation (commented out):
+    # Old implementation (keeping as reference)
     '''
-    # Load Salla data if available
-    salla_df = get_salla_orders_for_project(project_id)
-    
-    # TODO: Implement CSV data loading once available
-    # csv_df = get_csv_data_for_project(project_id)
-    csv_df = None
-
     # Collect all available dataframes
     dataframes = []
 
