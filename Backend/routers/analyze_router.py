@@ -39,8 +39,8 @@ def analyze_project_data(project_id: int):
         if not project:
             raise HTTPException(status_code=404, detail=f"Project with id {project_id} not found")
         
-        # Generate static metadata
-        metadata = {
+        # Generate static metadata for frontend response
+        metadata_for_response = {
             "analyzed_at": "2025-05-17T12:00:00Z",
             "data_sources": ["Salla"],
             "basic_stats": {
@@ -57,13 +57,33 @@ def analyze_project_data(project_id: int):
             }
         }
         
-        # Save the static metadata to Supabase
+        # Format metadata for Supabase in the format expected by update_project_metadata
+        supabase_metadata = {
+            "metadata": [
+                {
+                    "source": "Salla",
+                    "total_rows": 120,
+                    "total_columns": 5,  # Count of columns in column_details
+                    "columns": {
+                        "order_id": "string",
+                        "customer_name": "string",
+                        "amount": "numeric",
+                        "date": "datetime",
+                        "status": "string"
+                    }
+                }
+            ],
+            "data_sources": ["Salla"]
+        }
+        
+        # Save the static metadata to Supabase using the properly formatted structure
         try:
             from supabase_helpers.project import update_project_metadata
             logger.info(f"Saving static metadata to Supabase for project {project_id}")
             
             # Save metadata to the project's metadata field in Supabase
-            update_result = update_project_metadata(project_id, metadata)
+            # Use supabase_metadata which is formatted correctly for the update_project_metadata function
+            update_result = update_project_metadata(project_id, supabase_metadata)
             
             if not update_result:
                 logger.warning(f"Failed to update metadata for project {project_id}")
@@ -74,6 +94,7 @@ def analyze_project_data(project_id: int):
             # Continue execution even if saving to Supabase fails
         
         # Return response with metadata included
+        # Use metadata_for_response for the frontend to display
         return {
             "status": "success",
             "project_id": project_id,
@@ -81,7 +102,8 @@ def analyze_project_data(project_id: int):
                 "sources": ["Salla"],
                 "total_rows": 120
             },
-            "metadata": metadata
+            "metadata": metadata_for_response,
+            "supabase_metadata": supabase_metadata  # Include the Supabase metadata format for reference
         }
     except Exception as e:
         logger.error(f"Error in analyze_project_data: {str(e)}")
