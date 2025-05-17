@@ -121,9 +121,21 @@ def analyze_project_data(project_id: int):
             }
         
         # Data for saving to Supabase in the new project_metadata table
-        # Format this according to what save_project_metadata expects
+        # Format the metadata to contain only the analysis results, not the entire response
+        metadata_for_storage = {}
+        
+        if has_salla_data and 'analysis_results' in response_data.get('metadata', {}):
+            # Store only the analysis results as metadata
+            metadata_for_storage = response_data['metadata']['analysis_results']
+            logger.info(f"Storing analyzed Salla data metadata with keys: {list(metadata_for_storage.keys())}")
+        elif not data_sources or data_sources == ["Placeholder Data"]:
+            # For placeholder data, store the basic metadata
+            metadata_for_storage = response_data.get('metadata', {})
+            logger.info("Storing placeholder metadata")
+        
+        # Prepare data for Supabase in the format expected by save_project_metadata
         supabase_data = {
-            "metadata": response_data,  # Store the complete analysis result
+            "metadata": metadata_for_storage,  # Store only the analysis metadata
             "data_sources": data_sources
         }
         
