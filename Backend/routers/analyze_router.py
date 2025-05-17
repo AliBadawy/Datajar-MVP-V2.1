@@ -252,7 +252,25 @@ def classify(request: AnalyzeRequest):
         dict: A dictionary with the 'intent' key containing the classification result
     """
     user_message = request.messages[-1]["content"]
-    intent = classify_user_prompt(user_message)
+    
+    # Initialize DataFrame if available in the request
+    df = None
+    if request.dataframe:
+        df = pd.DataFrame(request.dataframe)
+        logger.info(f"Using DataFrame from request with {len(df)} rows for classification")
+    # If no data in request but project_id is provided, try to get Salla data
+    elif request.project_id:
+        try:
+            df = get_salla_orders_for_project(request.project_id)
+            if df is not None and not df.empty:
+                logger.info(f"Using Salla DataFrame for project {request.project_id} with {len(df)} rows for classification")
+        except Exception as e:
+            logger.warning(f"Error getting Salla data for classification: {str(e)}")
+    
+    # Call classify_user_prompt with the user message and DataFrame (if available)
+    intent = classify_user_prompt(user_message, df)
+    logger.info(f"Classified message as '{intent}' with {'dataset context' if df is not None else 'no dataset context'}")
+    
     return {"intent": intent}
 
 @router.post("/api/analyze")
@@ -291,9 +309,25 @@ def analyze(request: AnalyzeRequest):
                 # Only append the latest user message to avoid duplication
                 history = db_messages + [request.messages[-1]]
     
+    # Initialize DataFrame if available in the request
+    df = None
+    if request.dataframe:
+        df = pd.DataFrame(request.dataframe)
+        logger.info(f"Using DataFrame from request with {len(df)} rows for intent classification")
+    # If no data in request but project_id is provided, try to get Salla data
+    elif request.project_id:
+        try:
+            df = get_salla_orders_for_project(request.project_id)
+            if df is not None and not df.empty:
+                logger.info(f"Found Salla DataFrame for project {request.project_id} with {len(df)} rows for intent classification")
+        except Exception as e:
+            logger.warning(f"Error getting Salla data for intent classification: {str(e)}")
+            
     # 1. Determine if it's a chat message or a data analysis query
     last_message = request.messages[-1]
-    intent = classify_user_prompt(last_message["content"])
+    intent = classify_user_prompt(last_message["content"], df)
+    logger.info(f"Analyzed message: '{last_message['content'][:50]}...' classified as: {intent}")
+    
     
     # Save user message to Supabase if project_id is provided
     if request.project_id:

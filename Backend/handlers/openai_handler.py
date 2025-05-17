@@ -26,34 +26,56 @@ def get_client():
         _client = OpenAI(api_key=api_key)
     return _client
 
-def classify_user_prompt(prompt: str) -> str:
+from typing import Optional
+from utils.analyze_dataframe import analyze_dataframe
+
+def classify_user_prompt(prompt: str, df: Optional[pd.DataFrame] = None) -> str:
     """
-    Classifies a user prompt as either 'chat' or 'data_analysis'.
+    Classifies a user prompt as either 'chat' or 'data_analysis' with context awareness.
     
     Args:
         prompt (str): The user's message to classify
+        df (Optional[pd.DataFrame]): DataFrame with data context, if available
         
     Returns:
         str: 'chat' or 'data_analysis'
     """
-    classification_prompt = [
-        {"role": "system", "content": "Classify the following user prompt as either 'chat' or 'data_analysis'. Only reply with one word: chat or data_analysis."},
-        {"role": "user", "content": prompt}
-    ]
+    try:
+        # Get metadata about the dataset if available
+        metadata_str = json.dumps(analyze_dataframe(df), indent=2) if df is not None else "No dataset provided"
 
-    response = get_client().chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=classification_prompt
-    )
-    
-    intent = response.choices[0].message.content.strip().lower()
-    
-    # Ensure the response is one of the expected values
-    if intent not in ["chat", "data_analysis"]:
-        # Default to chat if the response doesn't match expected values
-        intent = "chat"
+        # Create a context-aware classification prompt
+        messages = [
+            {"role": "system", "content": (
+                "You are a classification assistant.\n"
+                "Your job is to classify the user's intent into:\n"
+                "- 'chat': general, exploratory, follow-up, or outside-the-data questions\n"
+                "- 'data_analysis': requests involving data filtering, comparison, charts, summaries\n"
+                "Only reply with one word: 'chat' or 'data_analysis'.\n\n"
+                f"Dataset context:\n{metadata_str}"
+            )},
+            {"role": "user", "content": prompt}
+        ]
+
+        # Use GPT-4o for better classification accuracy
+        response = get_client().chat.completions.create(
+            model="gpt-4o",
+            messages=messages
+        )
         
-    return intent
+        intent = response.choices[0].message.content.strip().lower()
+        
+        # Ensure the response is one of the expected values
+        if intent not in ["chat", "data_analysis"]:
+            logger.warning(f"Unexpected classification response: {intent}. Defaulting to 'chat'.")
+            intent = "chat"
+            
+        logger.info(f"Classified prompt as: {intent}")
+        return intent
+        
+    except Exception as e:
+        logger.error(f"[classify_user_prompt] Error: {e}")
+        return "chat"  # Default to chat on errors
 
 def get_openai_response(messages, persona="Data Analyst", industry="E-Commerce", business_context=""):
     """
