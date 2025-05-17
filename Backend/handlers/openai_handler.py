@@ -77,26 +77,65 @@ def classify_user_prompt(prompt: str, df: Optional[pd.DataFrame] = None) -> str:
         logger.error(f"[classify_user_prompt] Error: {e}")
         return "chat"  # Default to chat on errors
 
-def get_openai_response(messages, persona="Data Analyst", industry="E-Commerce", business_context=""):
+def get_openai_response(messages, persona="Data Analyst", industry="E-Commerce", business_context="", project_metadata=None, data_analysis=None, df=None):
     """
-    Gets a response from OpenAI's chat completion API with personalized context
+    Gets a response from OpenAI's chat completion API with rich context including project metadata and data analysis
     
     Args:
-        messages (List[Dict[str, str]]): List of message objects with 'role' and 'content'
-        persona (str): The persona to adopt (e.g., "Data Analyst", "Business Intelligence")
-        industry (str): The industry context (e.g., "E-Commerce", "Healthcare")
-        business_context (str): Additional business context or goals
+        messages (List[Dict[str, str]]): List of message objects
+        persona (str): The persona of the AI assistant
+        industry (str): The industry context for responses
+        business_context (str): Additional business context
+        project_metadata (Dict, optional): Project metadata from the metadata table
+        data_analysis (Dict, optional): Analysis of the DataFrame if available
+        df (pd.DataFrame, optional): The actual DataFrame if available
         
     Returns:
         str: The AI response text personalized to the context
     """
-    # Create a personalized system prompt
+    # Build a comprehensive system prompt with all available context
+    data_context = ""
+    
+    # Add data source information if available
+    if project_metadata:
+        try:
+            sources = project_metadata.get("data_sources", [])
+            if sources:
+                data_context += f"\nData sources available: {', '.join(sources)}"
+        except Exception as e:
+            logger.warning(f"Error processing project metadata: {str(e)}")
+    
+    # Add DataFrame information if available
+    if df is not None and not df.empty:
+        try:
+            data_context += f"\n\nDataFrame information:\n- {len(df)} rows\n- {len(df.columns)} columns: {', '.join(df.columns.tolist())}"
+            # Add basic stats about the data
+            if data_analysis:
+                if 'basic_stats' in data_analysis:
+                    stats = data_analysis['basic_stats']
+                    data_context += f"\n- Records analyzed: {stats.get('total_records', 'unknown')}"
+                    data_context += f"\n- Missing data: {stats.get('missing_data_percentage', 0)}%"
+                
+                # Add column type information
+                if 'data_types' in data_analysis:
+                    data_context += "\n\nColumn types:"
+                    for col, dtype in data_analysis['data_types'].items():
+                        data_context += f"\n- {col}: {dtype}"
+        except Exception as e:
+            logger.warning(f"Error adding DataFrame context: {str(e)}")
+    
+    # Create a comprehensive personalized system prompt
     system_content = f"""You are a helpful {persona} assistant specialized in the {industry} industry.
 
     {business_context if business_context else ''}
+    
+    {data_context}
 
-    Provide clear, concise, and actionable insights based on your expertise.
-        """
+    Provide clear, concise, and actionable insights based on your expertise and the available data.
+    When referring to data, be specific about the source and limitations of the analysis.
+    """
+    
+    logger.info(f"Created system prompt with data context: {len(data_context) > 0}")
     
     # Add or replace the system message
     has_system = False
@@ -108,13 +147,24 @@ def get_openai_response(messages, persona="Data Analyst", industry="E-Commerce",
             
     if not has_system:
         messages = [{"role": "system", "content": system_content}] + messages
-        
-    response = get_client().chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=messages
-    )
     
-    return response.choices[0].message.content
+    # Use GPT-4o for a more capable model that can handle the complex context
+    try:
+        response = get_client().chat.completions.create(
+            model="gpt-4o",  # Upgraded to GPT-4o for better context handling
+            messages=messages
+        )
+        
+        return response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"Error calling GPT-4o: {str(e)}. Falling back to GPT-3.5-turbo.")
+        # Fallback to GPT-3.5-turbo if GPT-4o fails
+        response = get_client().chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
+        
+        return response.choices[0].message.content
 
 def generate_pandasai_instruction(messages, df):
     """

@@ -344,8 +344,38 @@ def analyze(request: AnalyzeRequest):
 
     # 2. If it's a generic chat message or no data provided → GPT-only response
     if intent == "chat" or not request.dataframe:
-        # Pass all context to get more personalized responses
-        response = get_openai_response(history, persona, industry, context)
+        # Initialize project metadata and data analysis
+        project_metadata = None
+        data_analysis = None
+        
+        # Try to get project metadata if project_id is available
+        if request.project_id:
+            try:
+                from supabase_helpers.project import get_project_metadata
+                project_metadata = get_project_metadata(request.project_id)
+                logger.info(f"Loaded project metadata for chat: {project_metadata is not None}")
+            except Exception as e:
+                logger.warning(f"Error loading project metadata for chat: {str(e)}")
+        
+        # Generate DataFrame analysis if data is available
+        if df is not None and not df.empty:
+            try:
+                from utils.analyze_dataframe import analyze_dataframe
+                data_analysis = analyze_dataframe(df)
+                logger.info(f"Generated data analysis for chat with {len(data_analysis.keys()) if data_analysis else 0} metrics")
+            except Exception as e:
+                logger.warning(f"Error analyzing DataFrame for chat: {str(e)}")
+        
+        # Call get_openai_response with all available context
+        response = get_openai_response(
+            messages=history, 
+            persona=persona, 
+            industry=industry, 
+            business_context=context,
+            project_metadata=project_metadata["metadata"] if project_metadata else None,
+            data_analysis=data_analysis,
+            df=df
+        )
         
         # Save assistant response to Supabase if project_id is provided
         if request.project_id:

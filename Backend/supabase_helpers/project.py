@@ -143,6 +143,41 @@ def save_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
         return False
 
 
+def get_project_metadata(project_id: int) -> Optional[Dict[str, Any]]:
+    """
+    Retrieve a project's metadata from the project_metadata table in Supabase.
+    
+    Args:
+        project_id: The ID of the project to retrieve metadata for
+        
+    Returns:
+        Optional[Dict[str, Any]]: The project metadata or None if not found
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Fetching metadata for project {project_id}")
+    
+    try:
+        # Get Supabase client
+        supabase = get_supabase_client()
+        
+        # Query the project_metadata table for this project
+        response = supabase.table("project_metadata").select("*").eq("project_id", project_id).execute()
+        
+        if response and hasattr(response, 'data') and len(response.data) > 0:
+            logger.info(f"Found metadata for project {project_id}")
+            return response.data[0]
+        else:
+            logger.info(f"No metadata found for project {project_id}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error fetching project metadata: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return None
+
+
 def update_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
     """
     Update a project's metadata in Supabase (legacy function).
