@@ -115,25 +115,53 @@ def update_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
         logger.info("Sanitizing metadata...")
         sanitized_metadata = ensure_json_serializable(metadata)
         
-        # Step 4: Create a simplified update payload
-        update_data = {}
+        # Step 4: Create a minimal update payload with essential fields only
+        # This is a workaround for potential payload size limitations
         
-        # Only include fields that exist in the metadata
-        if "metadata" in sanitized_metadata:
-            update_data["metadata"] = sanitized_metadata["metadata"]
-            logger.info(f"Including metadata field with {len(sanitized_metadata['metadata'])} records")
-            
+        # Create a simplified payload with just the critical information
+        essential_data = {}
+        
+        # Include data sources list but minimal metadata
         if "data_sources" in sanitized_metadata:
-            update_data["data_sources"] = sanitized_metadata["data_sources"]
+            essential_data["data_sources"] = sanitized_metadata["data_sources"]
             logger.info(f"Including data_sources field: {sanitized_metadata['data_sources']}")
+        
+        # Simplify metadata to just include basic structure and minimal details
+        if "metadata" in sanitized_metadata and isinstance(sanitized_metadata["metadata"], list):
+            simplified_metadata = []
+            
+            # For each data source, include only essential info
+            for source_meta in sanitized_metadata["metadata"]:
+                essential_source = {
+                    "source": source_meta.get("source", "unknown"),
+                    "total_rows": source_meta.get("total_rows", 0),
+                    "total_columns": source_meta.get("total_columns", 0),
+                }
+                
+                # Add minimal column information if available
+                if "columns" in source_meta:
+                    # Just save column names and data types, not full metadata
+                    essential_source["columns"] = source_meta["columns"]
+                
+                simplified_metadata.append(essential_source)
+            
+            essential_data["metadata"] = simplified_metadata
+            logger.info(f"Created simplified metadata with {len(simplified_metadata)} sources")
         
         # Verify the data can be serialized to JSON
         try:
-            json_string = json.dumps(update_data)
+            json_string = json.dumps(essential_data)
             logger.info(f"✅ Update data successfully serialized ({len(json_string)} chars)")
+            
+            # Check payload size and warn if it's still large
+            if len(json_string) > 5000:  # 5KB might be getting close to limits
+                logger.warning(f"Payload is still large ({len(json_string)} bytes) which might cause issues")
         except Exception as json_err:
             logger.error(f"❌ Failed to serialize update data: {str(json_err)}")
             return False
+            
+        # Use the simplified data for the update
+        update_data = essential_data
         
         # Step 5: Perform the update with simplified, verified data
         logger.info(f"Executing update for project {project_id}...")
