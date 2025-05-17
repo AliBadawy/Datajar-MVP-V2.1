@@ -3,13 +3,13 @@ from models.schemas import AnalyzeRequest
 from handlers.openai_handler import (
     get_openai_response,
     classify_user_prompt,
-    wrap_pandasai_result_with_gpt,
-    generate_pandasai_instruction
+    wrap_pandasai_result_with_gpt
 )
 from handlers.pandasai_handler import initialize_smart_df, ask_pandasai
 from handlers.dataframe_handler import analyze_and_store_project_data
+from handlers.pandas_instruction_agent import generate_analysis_plan
 from supabase_helpers.message import save_message, get_messages_by_project
-from supabase_helpers.project import get_project_by_id
+from supabase_helpers.project import get_project_by_id, save_project_metadata
 from supabase_helpers.salla_order import get_salla_orders_for_project
 import pandas as pd
 from typing import Optional, List, Dict, Any
@@ -428,17 +428,55 @@ def analyze(request: AnalyzeRequest):
             response = get_openai_response(history, persona, industry, context)
             return {"type": "chat", "response": response}
         
-        # Initialize smart DataFrame and generate instruction
+        # Initialize project metadata and data analysis if available
+        project_metadata_dict = None
+        data_analysis_dict = None
+        data_source = "Salla" if request.project_id else "CSV"
+        
+        # Try to get project metadata if project_id is available
+        if request.project_id:
+            try:
+                from supabase_helpers.project import get_project_metadata
+                project_metadata_obj = get_project_metadata(request.project_id)
+                if project_metadata_obj:
+                    project_metadata_dict = project_metadata_obj.get("metadata", {})
+                    logger.info(f"Loaded project metadata for analysis: {project_metadata_dict is not None}")
+            except Exception as e:
+                logger.warning(f"Error loading project metadata for analysis: {str(e)}")
+        
+        # Generate DataFrame analysis if not available from metadata
+        if not project_metadata_dict:
+            try:
+                from utils.analyze_dataframe import analyze_dataframe
+                data_analysis_dict = analyze_dataframe(df)
+                logger.info(f"Generated data analysis with {len(data_analysis_dict.keys()) if data_analysis_dict else 0} metrics")
+            except Exception as e:
+                logger.warning(f"Error analyzing DataFrame: {str(e)}")
+        
+        # Generate intelligent analysis plan using the context-aware agent
+        analysis_plan = generate_analysis_plan(
+            messages=history,
+            df=df,
+            metadata=project_metadata_dict or data_analysis_dict,
+            persona=persona,
+            industry=industry,
+            business_context=context,
+            data_source=data_source
+        )
+        
+        logger.info(f"Analysis plan generated - Type: {analysis_plan['result_type']}, Columns: {analysis_plan['columns']}")
+        
+        # Initialize smart DataFrame and execute the analysis
         smart_df = initialize_smart_df(df)
-        instruction = generate_pandasai_instruction(history, df)
         
         try:
-            result = ask_pandasai(smart_df, instruction)
+            # Use the generated pandas_prompt from the analysis plan
+            result = ask_pandasai(smart_df, analysis_plan["pandas_prompt"])
             
             # Generate a natural language narrative using GPT with enhanced context
             narrative = wrap_pandasai_result_with_gpt(
                 user_prompt=last_message["content"],
-                pandas_instruction=instruction,
+                pandas_instruction=analysis_plan["pandas_prompt"],
                 pandas_result=result["value"],
                 df=df,
                 persona=persona,
@@ -463,8 +501,14 @@ def analyze(request: AnalyzeRequest):
             
             return {
                 "type": "data_analysis",
-                "pandas_result": result["value"],
-                "narrative": narrative
+                "response": narrative,
+                "result": result,
+                "metadata": {
+                    "instruction": analysis_plan["pandas_prompt"],
+                    "result_type": analysis_plan["result_type"],
+                    "plot_type": analysis_plan.get("plot_type"),
+                    "columns": analysis_plan["columns"]
+                }
             }
             
         except Exception as e:
