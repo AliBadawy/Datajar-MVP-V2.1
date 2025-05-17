@@ -41,6 +41,7 @@ def analyze_project_data(project_id: int):
         logger.info(f"Starting analysis for project {project_id}")
         
         # Check if Salla data exists for this project
+        salla_data = None
         has_salla_data = False
         try:
             # Get Salla orders for this project
@@ -48,6 +49,20 @@ def analyze_project_data(project_id: int):
             if salla_df is not None and not salla_df.empty:
                 logger.info(f"Found Salla data for project {project_id} with {len(salla_df)} records")
                 has_salla_data = True
+                
+                # Convert Salla dataframe to JSON
+                import json
+                from utils.analyze_dataframe import ensure_json_serializable
+                
+                # Convert to dict and then sanitize for JSON serialization
+                try:
+                    # Convert DataFrame to records (list of dicts)
+                    salla_records = salla_df.to_dict(orient='records')
+                    # Ensure all data is JSON serializable
+                    salla_data = ensure_json_serializable(salla_records)
+                    logger.info(f"Successfully converted Salla data to JSON with {len(salla_records)} records")
+                except Exception as e:
+                    logger.error(f"Error converting Salla data to JSON: {str(e)}")
             else:
                 logger.info(f"No Salla data found for project {project_id}")
         except Exception as e:
@@ -62,35 +77,50 @@ def analyze_project_data(project_id: int):
         if not data_sources:
             data_sources = ["Placeholder Data"]
             logger.info("No data sources found, using placeholder data")
-        
-        # Create static analysis data
-        column_details = {
-            "order_id": { "type": "string", "missing": 0 },
-            "customer_name": { "type": "string", "missing": 3 },
-            "amount": { "type": "numeric", "missing": 0 },
-            "date": { "type": "datetime", "missing": 0 },
-            "status": { "type": "string", "missing": 0 },
-        }
-        
-        # Create a response object for the frontend
-        response_data = {
-            "status": "success",
-            "project_id": project_id,
-            "summary": {
-                "sources": data_sources,
-                "total_rows": 120
-            },
-            "metadata": {
-                "analyzed_at": "2025-05-17T12:00:00Z",
-                "data_sources": data_sources,
-                "basic_stats": {
-                    "total_records": 120,
-                    "columns_analyzed": len(column_details),
-                    "missing_data_percentage": 2.5,
-                },
-                "column_details": column_details
+            
+            # Create static placeholder data
+            column_details = {
+                "order_id": { "type": "string", "missing": 0 },
+                "customer_name": { "type": "string", "missing": 3 },
+                "amount": { "type": "numeric", "missing": 0 },
+                "date": { "type": "datetime", "missing": 0 },
+                "status": { "type": "string", "missing": 0 },
             }
-        }
+            
+            # Create a response object with placeholder data
+            response_data = {
+                "status": "success",
+                "project_id": project_id,
+                "summary": {
+                    "sources": data_sources,
+                    "total_rows": 120
+                },
+                "metadata": {
+                    "analyzed_at": "2025-05-17T12:00:00Z",
+                    "data_sources": data_sources,
+                    "basic_stats": {
+                        "total_records": 120,
+                        "columns_analyzed": 5,
+                        "missing_data_percentage": 2.5,
+                    },
+                    "column_details": column_details
+                }
+            }
+        else:
+            # Create a response with the actual Salla data
+            response_data = {
+                "status": "success",
+                "project_id": project_id,
+                "summary": {
+                    "sources": data_sources,
+                    "total_rows": len(salla_data) if salla_data else 0
+                },
+                "metadata": {
+                    "analyzed_at": "2025-05-17T12:00:00Z",
+                    "data_sources": data_sources,
+                    "raw_data": salla_data  # Include the raw Salla data
+                }
+            }
         
         # Data for saving to Supabase in the new project_metadata table
         # Format this according to what save_project_metadata expects
