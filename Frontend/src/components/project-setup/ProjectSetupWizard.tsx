@@ -548,18 +548,55 @@ export default function ProjectSetupWizard() {
               </>
             ) : (
               <>
-                <div className="text-green-500 mb-4 text-xl">✅ Analysis complete!</div>
-                <p className="text-gray-600 mb-3">
-                  Your data has been successfully analyzed and is ready for exploration.
-                  Please click "Finish Setup" at the bottom to complete the process.
-                </p>
+                <div className="mb-6 p-6 border border-green-200 rounded-lg bg-green-50">
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <h3 className="text-center text-green-700 text-xl font-medium mb-2">Analysis Complete!</h3>
+                  <p className="text-center text-gray-600 mb-4">
+                    Your data has been successfully analyzed and is ready for exploration.
+                  </p>
+
+                  {/* Animated checkmarks for all completed steps */}
+                  <div className="w-full max-w-md mx-auto space-y-2 mb-4">
+                    {analysisSteps.map((step, index) => (
+                      <div key={step.name} className="flex items-center animate-fadeIn" style={{animationDelay: `${index * 150}ms`}}>
+                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        </div>
+                        <p className="ml-3 text-sm text-gray-700">{step.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <p className="text-center text-gray-600 text-sm">
+                    Please click "Finish Setup" at the bottom to complete the process.
+                  </p>
+                </div>
                 
                 {analysisData && (
-                  <div className="w-full max-w-4xl mx-auto mb-5">
-                    <h3 className="font-semibold mb-2 text-left">Raw Analysis Data:</h3>
-                    <pre className="bg-slate-100 p-4 rounded-md text-left overflow-auto max-h-60 text-sm">
-                      {JSON.stringify(analysisData, null, 2)}
-                    </pre>
+                  <div className="w-full max-w-4xl mx-auto mb-5 mt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-left">Analysis Results</h3>
+                      <div className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">JSON Preview</div>
+                    </div>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 border-b border-gray-200 py-2 px-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-xs text-gray-600 font-mono">project_metadata.json</span>
+                      </div>
+                      <pre className="bg-slate-100 p-4 text-left overflow-auto max-h-60 text-sm">
+                        {JSON.stringify(analysisData, null, 2)}
+                      </pre>
+                    </div>
                   </div>
                 )}
               </>
