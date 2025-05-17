@@ -40,6 +40,29 @@ def analyze_project_data(project_id: int):
             
         logger.info(f"Starting analysis for project {project_id}")
         
+        # Check if Salla data exists for this project
+        has_salla_data = False
+        try:
+            # Get Salla orders for this project
+            salla_df = get_salla_orders_for_project(project_id)
+            if salla_df is not None and not salla_df.empty:
+                logger.info(f"Found Salla data for project {project_id} with {len(salla_df)} records")
+                has_salla_data = True
+            else:
+                logger.info(f"No Salla data found for project {project_id}")
+        except Exception as e:
+            logger.warning(f"Error checking Salla data: {str(e)}")
+        
+        # Determine data sources based on available data
+        data_sources = []
+        if has_salla_data:
+            data_sources.append("Salla")
+        
+        # If no data source was found, use placeholder
+        if not data_sources:
+            data_sources = ["Placeholder Data"]
+            logger.info("No data sources found, using placeholder data")
+        
         # Create static analysis data
         column_details = {
             "order_id": { "type": "string", "missing": 0 },
@@ -54,12 +77,12 @@ def analyze_project_data(project_id: int):
             "status": "success",
             "project_id": project_id,
             "summary": {
-                "sources": ["Salla"],
+                "sources": data_sources,
                 "total_rows": 120
             },
             "metadata": {
                 "analyzed_at": "2025-05-17T12:00:00Z",
-                "data_sources": ["Salla"],
+                "data_sources": data_sources,
                 "basic_stats": {
                     "total_records": 120,
                     "columns_analyzed": len(column_details),
@@ -73,7 +96,7 @@ def analyze_project_data(project_id: int):
         # Format this according to what save_project_metadata expects
         supabase_data = {
             "metadata": response_data,  # Store the complete analysis result
-            "data_sources": ["Salla"]
+            "data_sources": data_sources
         }
         
         # Save to Supabase using the new function
