@@ -343,7 +343,7 @@ def analyze(request: AnalyzeRequest):
             # Continue processing even if saving fails
 
     # 2. If it's a generic chat message or no data provided → GPT-only response
-    if intent == "chat" or not request.dataframe:
+    if intent == "chat":
         # Initialize project metadata and data analysis
         project_metadata = None
         data_analysis = None
