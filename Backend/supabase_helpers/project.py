@@ -83,22 +83,27 @@ def update_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
     """
     import logging
     import json
+    import traceback
+    from utils.analyze_dataframe import ensure_json_serializable
     
     logger = logging.getLogger(__name__)
     logger.info(f"Updating metadata for project {project_id}")
     
     try:
-        # First, check if the metadata can be serialized to JSON
+        # First, ensure all data is JSON serializable by using our ensure_json_serializable function
+        logger.info("Sanitizing metadata to ensure JSON serialization compatibility")
+        sanitized_metadata = ensure_json_serializable(metadata)
+        
+        # Verify JSON serialization works on the sanitized data
         try:
-            # Attempt to serialize the metadata to verify it's valid JSON
-            json_string = json.dumps(metadata)
+            json_string = json.dumps(sanitized_metadata)
             logger.info(f"Metadata successfully serialized to JSON ({len(json_string)} characters)")
         except (TypeError, ValueError, OverflowError) as json_err:
-            logger.error(f"Failed to serialize metadata to JSON: {str(json_err)}")
-            logger.error(f"Metadata keys: {list(metadata.keys())}")
+            logger.error(f"Failed to serialize metadata to JSON even after sanitization: {str(json_err)}")
+            logger.error(f"Metadata keys: {list(sanitized_metadata.keys())}")
             
             # Try to identify problematic fields
-            for key, value in metadata.items():
+            for key, value in sanitized_metadata.items():
                 try:
                     json.dumps({key: value})
                 except Exception as field_err:
@@ -109,12 +114,12 @@ def update_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
         supabase = get_supabase_client()
         logger.info(f"Executing Supabase update for project {project_id}")
         
-        # Format metadata for Supabase
+        # Format metadata for Supabase using the sanitized version
         update_data = {}
-        if "metadata" in metadata:
-            update_data["metadata"] = metadata["metadata"]
-        if "data_sources" in metadata:
-            update_data["data_sources"] = metadata["data_sources"]
+        if "metadata" in sanitized_metadata:
+            update_data["metadata"] = sanitized_metadata["metadata"]
+        if "data_sources" in sanitized_metadata:
+            update_data["data_sources"] = sanitized_metadata["data_sources"]
             
         # Debug: Output first 500 chars of the update data
         update_preview = str(update_data)[:500] + '...' if len(str(update_data)) > 500 else str(update_data)
