@@ -87,57 +87,80 @@ def update_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
     from utils.analyze_dataframe import ensure_json_serializable
     
     logger = logging.getLogger(__name__)
-    logger.info(f"Updating metadata for project {project_id}")
+    logger.info(f"===== Starting metadata update for project {project_id} =====")
+    
+    # Ensure project_id is an integer
+    try:
+        project_id = int(project_id)
+        logger.info(f"Using project ID: {project_id} (type: {type(project_id)})")
+    except (TypeError, ValueError):
+        logger.error(f"Invalid project_id type: {type(project_id)}, value: {project_id}")
+        return False
     
     try:
-        # First, ensure all data is JSON serializable by using our ensure_json_serializable function
-        logger.info("Sanitizing metadata to ensure JSON serialization compatibility")
+        # Step 1: Get Supabase client
+        supabase = get_supabase_client()
+        
+        # Step 2: Check if the project exists
+        logger.info("Verifying project exists in database...")
+        project_check = supabase.table("projects").select("id").eq("id", project_id).execute()
+        
+        if not project_check or not hasattr(project_check, 'data') or len(project_check.data) == 0:
+            logger.error(f"❌ Project with ID {project_id} not found in database")
+            return False
+        else:
+            logger.info(f"✅ Project ID {project_id} exists in database")
+        
+        # Step 3: Sanitize metadata to ensure JSON compatibility
+        logger.info("Sanitizing metadata...")
         sanitized_metadata = ensure_json_serializable(metadata)
         
-        # Verify JSON serialization works on the sanitized data
-        try:
-            json_string = json.dumps(sanitized_metadata)
-            logger.info(f"Metadata successfully serialized to JSON ({len(json_string)} characters)")
-        except (TypeError, ValueError, OverflowError) as json_err:
-            logger.error(f"Failed to serialize metadata to JSON even after sanitization: {str(json_err)}")
-            logger.error(f"Metadata keys: {list(sanitized_metadata.keys())}")
-            
-            # Try to identify problematic fields
-            for key, value in sanitized_metadata.items():
-                try:
-                    json.dumps({key: value})
-                except Exception as field_err:
-                    logger.error(f"Problem field: '{key}', error: {str(field_err)}")
-            return False
-        
-        # Connect to Supabase and update the project
-        supabase = get_supabase_client()
-        logger.info(f"Executing Supabase update for project {project_id}")
-        
-        # Format metadata for Supabase using the sanitized version
+        # Step 4: Create a simplified update payload
         update_data = {}
+        
+        # Only include fields that exist in the metadata
         if "metadata" in sanitized_metadata:
             update_data["metadata"] = sanitized_metadata["metadata"]
+            logger.info(f"Including metadata field with {len(sanitized_metadata['metadata'])} records")
+            
         if "data_sources" in sanitized_metadata:
             update_data["data_sources"] = sanitized_metadata["data_sources"]
-            
-        # Debug: Output first 500 chars of the update data
-        update_preview = str(update_data)[:500] + '...' if len(str(update_data)) > 500 else str(update_data)
-        logger.info(f"Update data preview: {update_preview}")
-            
-        # Use select() to return the updated row, which helps with debugging
-        response = supabase.table("projects").update(update_data).eq("id", project_id).select().execute()
+            logger.info(f"Including data_sources field: {sanitized_metadata['data_sources']}")
         
-        # Check if the update was successful
-        if response and response.data:
-            logger.info(f"Successfully updated metadata for project {project_id}")
-            return True
-        else:
-            logger.error(f"Failed to update metadata for project {project_id}: No data in response")
-            logger.error(f"Response: {response}")
+        # Verify the data can be serialized to JSON
+        try:
+            json_string = json.dumps(update_data)
+            logger.info(f"✅ Update data successfully serialized ({len(json_string)} chars)")
+        except Exception as json_err:
+            logger.error(f"❌ Failed to serialize update data: {str(json_err)}")
             return False
+        
+        # Step 5: Perform the update with simplified, verified data
+        logger.info(f"Executing update for project {project_id}...")
+        
+        try:
+            # Test with a minimal query first
+            test_response = supabase.table("projects").update({"updated_at": "now()"}).eq("id", project_id).execute()
+            logger.info("Test update successful")
+            
+            # Now perform the actual update with our data
+            response = supabase.table("projects").update(update_data).eq("id", project_id).execute()
+            
+            if response and hasattr(response, 'data') and response.data:
+                logger.info(f"✅ Successfully updated project {project_id}")
+                return True
+            else:
+                logger.error("❌ Update operation failed - no data returned")
+                if hasattr(response, 'error'):
+                    logger.error(f"Error: {response.error}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Exception during update: {str(e)}")
+            logger.error(traceback.format_exc())
+            return False
+            
     except Exception as e:
-        logger.error(f"Exception updating project metadata: {str(e)}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
+        logger.error(f"❌ Unexpected error: {str(e)}")
+        logger.error(traceback.format_exc())
         return False
