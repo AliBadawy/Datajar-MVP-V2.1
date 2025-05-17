@@ -551,6 +551,7 @@ export default function ProjectSetupWizard() {
                 <div className="text-green-500 mb-4 text-xl">✅ Analysis complete!</div>
                 <p className="text-gray-600 mb-3">
                   Your data has been successfully analyzed and is ready for exploration.
+                  Please click "Finish Setup" at the bottom to complete the process.
                 </p>
                 
                 {analysisData && (
@@ -561,13 +562,6 @@ export default function ProjectSetupWizard() {
                     </pre>
                   </div>
                 )}
-                
-                <button
-                  className="bg-black text-white py-2 px-5 rounded hover:bg-gray-800 transition-colors mt-2"
-                  onClick={handleFinish}
-                >
-                  Complete Setup
-                </button>
               </>
             )}
           </div>
