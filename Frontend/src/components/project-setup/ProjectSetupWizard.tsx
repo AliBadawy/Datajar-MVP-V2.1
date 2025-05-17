@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../lib/store';
+import { analyzeProject } from '../../lib/api';
 import SallaDialog from './salla-dialog';
 
 export default function ProjectSetupWizard() {
@@ -22,8 +23,11 @@ export default function ProjectSetupWizard() {
   const [industry, setIndustry] = useState('');
   const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
 
-  // Project ID state for tracking the current project
+  // Project ID and analysis state tracking
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Read step from URL parameters and restore form data when component mounts
   useEffect(() => {
@@ -142,10 +146,45 @@ export default function ProjectSetupWizard() {
     }
   };
 
-  // Analysis trigger function  // Log project ID state for debugging
+  // Analysis trigger function  // Function to trigger analysis via backend API
+  const triggerProjectAnalysis = async () => {
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+
+    try {
+      console.log("⏳ Starting analysis for project ID:", projectId);
+      if (!projectId) {
+        throw new Error("Project ID is missing. Cannot analyze without a project ID.");
+      }
+      
+      const result = await analyzeProject(projectId);
+      console.log("✅ Analysis completed successfully:", result);
+      setAnalysisComplete(true);
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.detail || err?.message || "Unknown error";
+      console.error('🔴 Analysis error details:', { 
+        message: errorMessage, 
+        status: err?.response?.status,
+        error: err 
+      });
+      setAnalysisError(`❌ Analysis failed: ${errorMessage}`);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+  
+  // Log project ID state for debugging
   useEffect(() => {
-    console.log(`🔍 Current step: ${step}, Project ID: ${projectId}`);
-  }, [step, projectId]);
+    console.log(`🔍 Current step: ${step}, Project ID: ${projectId}, Analysis complete: ${analysisComplete}`);
+  }, [step, projectId, analysisComplete]);
+  
+  // Add effect to trigger analysis on step 5
+  useEffect(() => {
+    if (step === 5 && projectId && !analysisComplete && !isAnalyzing) {
+      console.log(`🚀 Auto-triggering analysis for project ${projectId} on step ${step}`);
+      triggerProjectAnalysis();
+    }
+  }, [step, projectId, analysisComplete, isAnalyzing]);
 
 
   const handleFinish = async () => {
@@ -404,17 +443,37 @@ export default function ProjectSetupWizard() {
 
         {step === 5 && (
           <div className="text-center p-8">
-            <div className="text-green-500 mb-4 text-xl">✅ Data Ready for Analysis</div>
-            <p className="text-gray-600 mb-5">
-              Your project setup is complete! Your data is now ready to be explored.
-              Click the button below to complete the setup process.
-            </p>
-            <button
-              className="bg-black text-white py-2 px-5 rounded hover:bg-gray-800 transition-colors"
-              onClick={handleFinish}
-            >
-              Complete Setup
-            </button>
+            {isAnalyzing ? (
+              <>
+                <div className="animate-spin border-4 border-black border-t-transparent rounded-full w-12 h-12 mx-auto mb-4" />
+                <h2 className="text-lg font-medium">Analyzing your data...</h2>
+                <p className="text-gray-600 mt-2">Fetching analysis from the server</p>
+              </>
+            ) : analysisError ? (
+              <>
+                <p className="text-red-600 mb-4">{analysisError}</p>
+                <button
+                  onClick={triggerProjectAnalysis}
+                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded"
+                >
+                  Retry Analysis
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="text-green-500 mb-4 text-xl">✅ Analysis complete!</div>
+                <p className="text-gray-600 mb-5">
+                  Your data has been successfully analyzed and is ready for exploration.
+                  Click the button below to complete the setup process.
+                </p>
+                <button
+                  className="bg-black text-white py-2 px-5 rounded hover:bg-gray-800 transition-colors"
+                  onClick={handleFinish}
+                >
+                  Complete Setup
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

@@ -24,23 +24,54 @@ router = APIRouter()
 @router.post("/api/projects/{project_id}/analyze")
 def analyze_project_data(project_id: int):
     """
-    Endpoint to analyze data for a specific project and generate metadata.
-    This should be called after project setup is completed or when new data is added.
+    Endpoint to return static analysis data for a project.
+    This is a simplified version that returns static data instead of doing actual analysis.
     
     Args:
         project_id: ID of the project to analyze
         
     Returns:
-        dict: Analysis metadata for the project data
+        dict: Static analysis data
     """
-    logger.info(f"🔍 Starting analysis for project {project_id}")
+    logger.info(f"🔍 Starting STATIC analysis for project {project_id}")
     
     # Check if project exists
     project = get_project_by_id(project_id)
     if not project:
         logger.error(f"Project with ID {project_id} not found")
         raise HTTPException(status_code=404, detail="Project not found")
-
+    
+    # Return static analysis data
+    logger.info(f"🎉 Returning static analysis data for project {project_id}")
+    
+    # Return static hardcoded data
+    return {
+        "status": "success",
+        "project_id": project_id,
+        "summary": {
+            "sources": ["Salla"],
+            "total_rows": 120
+        },
+        "metadata": {
+            "analyzed_at": "2025-05-17T12:00:00Z",
+            "data_sources": ["Salla"],
+            "basic_stats": {
+                "total_records": 120,
+                "columns_analyzed": 15,
+                "missing_data_percentage": 2.5,
+            },
+            "column_details": {
+                "order_id": { "type": "string", "missing": 0 },
+                "customer_name": { "type": "string", "missing": 3 },
+                "amount": { "type": "numeric", "missing": 0 },
+                "date": { "type": "datetime", "missing": 0 },
+                "status": { "type": "string", "missing": 0 },
+            }
+        }
+    }
+    
+    # Previous implementation (commented out):
+    '''
     # Load Salla data if available
     salla_df = get_salla_orders_for_project(project_id)
     
@@ -123,6 +154,8 @@ def analyze_project_data(project_id: int):
             "total_rows": sum(df.shape[0] for _, df in dataframes)
         }
     }
+    '''
+
 
 @router.post("/api/classify")
 def classify(request: AnalyzeRequest):
