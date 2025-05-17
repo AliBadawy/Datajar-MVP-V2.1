@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../lib/store';
-import { analyzeProject } from '../../lib/api';
 import SallaDialog from './salla-dialog';
 
 export default function ProjectSetupWizard() {
@@ -23,11 +22,8 @@ export default function ProjectSetupWizard() {
   const [industry, setIndustry] = useState('');
   const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
 
-  // Analysis state variables
+  // Project ID state for tracking the current project
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisComplete, setAnalysisComplete] = useState(false);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Read step from URL parameters and restore form data when component mounts
   useEffect(() => {
@@ -146,69 +142,11 @@ export default function ProjectSetupWizard() {
     }
   };
 
-  // Analysis trigger function with improved error handling
-  const triggerProjectAnalysis = async () => {
-    setIsAnalyzing(true);
-    setAnalysisError(null);
+  // Analysis trigger function  // Log project ID state for debugging
+  useEffect(() => {
+    console.log(`🔍 Current step: ${step}, Project ID: ${projectId}`);
+  }, [step, projectId]);
 
-    try {
-      console.log("⏳ Starting analysis for project ID:", projectId);
-      if (!projectId) {
-        throw new Error("Project ID is missing. Cannot analyze without a project ID.");
-      }
-      
-      // Provide additional diagnostic information
-      console.log("Project details before analysis:", {
-        projectId,
-        projectIdType: typeof projectId,
-        step
-      });
-      
-      const result = await analyzeProject(projectId);
-      console.log("✅ Analysis completed successfully:", result);
-      setAnalysisComplete(true);
-    } catch (err: any) {
-      // Capture detailed error information
-      const errorMessage = err?.response?.data?.detail || err?.message || "Unknown error";
-      console.error('🔴 Analysis error details:', { 
-        message: errorMessage, 
-        status: err?.response?.status,
-        error: err 
-      });
-      
-      // Display a more user-friendly error message with retry option
-      setAnalysisError(`❌ Analysis failed: ${errorMessage}`);
-      
-      // Mark as complete even though it failed, to prevent retries
-      setAnalysisComplete(false);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-  
-  // Function to manually retry analysis if it failed
-  const retryAnalysis = () => {
-    setAnalysisAttempted(false);
-    setAnalysisError(null);
-    setAnalysisComplete(false);
-  };
-  
-  // Log project ID state for debugging
-  useEffect(() => {
-    console.log(`🔍 Current step: ${step}, Project ID: ${projectId}, Analysis complete: ${analysisComplete}`);
-  }, [step, projectId, analysisComplete]);
-  
-  // Track if analysis has been attempted to prevent infinite retries
-  const [analysisAttempted, setAnalysisAttempted] = useState<boolean>(false);
-  
-  // Add effect to trigger analysis on step 5 (analysis step) - only once
-  useEffect(() => {
-    if (step === 5 && projectId && !analysisComplete && !isAnalyzing && !analysisAttempted) {
-      console.log(`🚀 Auto-triggering analysis for project ${projectId} on step ${step}`);
-      setAnalysisAttempted(true); // Mark that we've tried analysis
-      triggerProjectAnalysis();
-    }
-  }, [step, projectId, analysisComplete, isAnalyzing, analysisAttempted]);
 
   const handleFinish = async () => {
     setIsSubmitting(true);
@@ -466,34 +404,17 @@ export default function ProjectSetupWizard() {
 
         {step === 5 && (
           <div className="text-center p-8">
-            {isAnalyzing ? (
-              <>
-                <div className="animate-spin border-4 border-black border-t-transparent rounded-full w-12 h-12 mx-auto mb-4" />
-                <h2 className="text-lg font-medium">Analyzing your data...</h2>
-                <p className="text-gray-600 mt-2">This may take a few seconds</p>
-              </>
-            ) : analysisError ? (
-              <>
-                <p className="text-red-600 mb-4">{analysisError}</p>
-                <button
-                  onClick={retryAnalysis}
-                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded"
-                >
-                  Retry Analysis
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="text-green-500 mb-4 text-xl">✅ Analysis complete!</div>
-                <p className="text-gray-600 mb-5">Your data has been successfully analyzed and is ready for exploration.</p>
-                <button
-                  className="bg-black text-white py-2 px-5 rounded hover:bg-gray-800 transition-colors"
-                  onClick={handleFinish}
-                >
-                  Finish Project Setup
-                </button>
-              </>
-            )}
+            <div className="text-green-500 mb-4 text-xl">✅ Data Ready for Analysis</div>
+            <p className="text-gray-600 mb-5">
+              Your project setup is complete! Your data is now ready to be explored.
+              Click the button below to complete the setup process.
+            </p>
+            <button
+              className="bg-black text-white py-2 px-5 rounded hover:bg-gray-800 transition-colors"
+              onClick={handleFinish}
+            >
+              Complete Setup
+            </button>
           </div>
         )}
       </div>
