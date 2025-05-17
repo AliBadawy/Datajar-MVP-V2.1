@@ -24,8 +24,7 @@ router = APIRouter()
 @router.post("/api/projects/{project_id}/analyze")
 def analyze_project_data(project_id: int):
     """
-    Endpoint to return static analysis data for a project.
-    This is a simplified version that returns static data instead of doing actual analysis.
+    Endpoint to return static analysis data for a project and save it to the project_metadata table.
     
     Args:
         project_id: ID of the project to analyze
@@ -38,73 +37,62 @@ def analyze_project_data(project_id: int):
         project = get_project_by_id(project_id)
         if not project:
             raise HTTPException(status_code=404, detail=f"Project with id {project_id} not found")
+            
+        logger.info(f"Starting analysis for project {project_id}")
         
-        # Generate static metadata for frontend response
-        metadata_for_response = {
-            "analyzed_at": "2025-05-17T12:00:00Z",
-            "data_sources": ["Salla"],
-            "basic_stats": {
-                "total_records": 120,
-                "columns_analyzed": 15,
-                "missing_data_percentage": 2.5,
-            },
-            "column_details": {
-                "order_id": { "type": "string", "missing": 0 },
-                "customer_name": { "type": "string", "missing": 3 },
-                "amount": { "type": "numeric", "missing": 0 },
-                "date": { "type": "datetime", "missing": 0 },
-                "status": { "type": "string", "missing": 0 },
-            }
+        # Create static analysis data
+        column_details = {
+            "order_id": { "type": "string", "missing": 0 },
+            "customer_name": { "type": "string", "missing": 3 },
+            "amount": { "type": "numeric", "missing": 0 },
+            "date": { "type": "datetime", "missing": 0 },
+            "status": { "type": "string", "missing": 0 },
         }
         
-        # Format metadata for Supabase in the format expected by update_project_metadata
-        supabase_metadata = {
-            "metadata": [
-                {
-                    "source": "Salla",
-                    "total_rows": 120,
-                    "total_columns": 5,  # Count of columns in column_details
-                    "columns": {
-                        "order_id": "string",
-                        "customer_name": "string",
-                        "amount": "numeric",
-                        "date": "datetime",
-                        "status": "string"
-                    }
-                }
-            ],
-            "data_sources": ["Salla"]
-        }
-        
-        # Save the static metadata to Supabase using the properly formatted structure
-        try:
-            from supabase_helpers.project import update_project_metadata
-            logger.info(f"Saving static metadata to Supabase for project {project_id}")
-            
-            # Save metadata to the project's metadata field in Supabase
-            # Use supabase_metadata which is formatted correctly for the update_project_metadata function
-            update_result = update_project_metadata(project_id, supabase_metadata)
-            
-            if not update_result:
-                logger.warning(f"Failed to update metadata for project {project_id}")
-            else:
-                logger.info(f"✅ Static metadata successfully saved to Supabase for project {project_id}")
-        except Exception as e:
-            logger.error(f"Error saving metadata to Supabase: {str(e)}")
-            # Continue execution even if saving to Supabase fails
-        
-        # Return response with metadata included
-        # Use metadata_for_response for the frontend to display
-        return {
+        # Create a response object for the frontend
+        response_data = {
             "status": "success",
             "project_id": project_id,
             "summary": {
                 "sources": ["Salla"],
                 "total_rows": 120
             },
-            "metadata": metadata_for_response,
-            "supabase_metadata": supabase_metadata  # Include the Supabase metadata format for reference
+            "metadata": {
+                "analyzed_at": "2025-05-17T12:00:00Z",
+                "data_sources": ["Salla"],
+                "basic_stats": {
+                    "total_records": 120,
+                    "columns_analyzed": len(column_details),
+                    "missing_data_percentage": 2.5,
+                },
+                "column_details": column_details
+            }
         }
+        
+        # Data for saving to Supabase in the new project_metadata table
+        # Format this according to what save_project_metadata expects
+        supabase_data = {
+            "metadata": response_data,  # Store the complete analysis result
+            "data_sources": ["Salla"]
+        }
+        
+        # Save to Supabase using the new function
+        try:
+            from supabase_helpers.project import save_project_metadata
+            logger.info(f"Saving analysis data to project_metadata table for project {project_id}")
+            
+            save_result = save_project_metadata(project_id, supabase_data)
+            
+            if not save_result:
+                logger.warning(f"Failed to save metadata for project {project_id}")
+            else:
+                logger.info(f"✅ Analysis data successfully saved to Supabase for project {project_id}")
+        except Exception as e:
+            logger.error(f"Error saving to project_metadata table: {str(e)}")
+            # Continue execution even if saving fails
+            
+        # Return the response to the frontend
+        return response_data
     except Exception as e:
         logger.error(f"Error in analyze_project_data: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error analyzing project data: {str(e)}")

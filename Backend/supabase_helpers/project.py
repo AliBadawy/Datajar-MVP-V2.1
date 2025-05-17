@@ -70,9 +70,83 @@ def get_or_create_project(project_data: Dict[str, Any]) -> Dict[str, Any]:
         raise e
 
 
+def save_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
+    """
+    Save a project's metadata to the project_metadata table in Supabase.
+    
+    Args:
+        project_id: The ID of the project to update
+        metadata: Dictionary containing metadata to save
+        
+    Returns:
+        bool: True if save was successful, False otherwise
+    """
+    import logging
+    import json
+    from utils.analyze_dataframe import ensure_json_serializable
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"Saving metadata to project_metadata table for project {project_id}")
+    
+    try:
+        # Ensure project_id is an integer
+        project_id = int(project_id)
+        
+        # Get Supabase client
+        supabase = get_supabase_client()
+        
+        # Verify project exists
+        project_check = supabase.table("projects").select("id").eq("id", project_id).execute()
+        if not project_check or not hasattr(project_check, 'data') or len(project_check.data) == 0:
+            logger.error(f"Project with ID {project_id} not found in database")
+            return False
+            
+        # Sanitize metadata to ensure JSON compatibility
+        sanitized_metadata = ensure_json_serializable(metadata)
+        
+        # Extract data sources if available
+        data_sources = sanitized_metadata.get("data_sources", [])
+        
+        # Check if record already exists for this project
+        existing_record = supabase.table("project_metadata").select("id").eq("project_id", project_id).execute()
+        
+        if existing_record and hasattr(existing_record, 'data') and len(existing_record.data) > 0:
+            # Update existing record
+            logger.info(f"Updating existing metadata record for project {project_id}")
+            response = supabase.table("project_metadata").update({
+                "metadata": sanitized_metadata,
+                "data_sources": data_sources,
+                "updated_at": "now()"
+            }).eq("project_id", project_id).execute()
+        else:
+            # Insert new record
+            logger.info(f"Creating new metadata record for project {project_id}")
+            response = supabase.table("project_metadata").insert({
+                "project_id": project_id,
+                "metadata": sanitized_metadata,
+                "data_sources": data_sources
+            }).execute()
+        
+        if response and hasattr(response, 'data') and response.data:
+            logger.info(f"Successfully saved metadata for project {project_id}")
+            return True
+        else:
+            logger.error("Failed to save metadata - no data returned")
+            if hasattr(response, 'error'):
+                logger.error(f"Error: {response.error}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error saving project metadata: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return False
+
+
 def update_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
     """
-    Update a project's metadata in Supabase.
+    Update a project's metadata in Supabase (legacy function).
+    This now calls save_project_metadata which uses the new table structure.
     
     Args:
         project_id: The ID of the project to update
@@ -82,113 +156,8 @@ def update_project_metadata(project_id: int, metadata: Dict[str, Any]) -> bool:
         bool: True if update was successful, False otherwise
     """
     import logging
-    import json
-    import traceback
-    from utils.analyze_dataframe import ensure_json_serializable
-    
     logger = logging.getLogger(__name__)
-    logger.info(f"===== Starting metadata update for project {project_id} =====")
+    logger.info(f"Legacy update_project_metadata called, forwarding to save_project_metadata")
     
-    # Ensure project_id is an integer
-    try:
-        project_id = int(project_id)
-        logger.info(f"Using project ID: {project_id} (type: {type(project_id)})")
-    except (TypeError, ValueError):
-        logger.error(f"Invalid project_id type: {type(project_id)}, value: {project_id}")
-        return False
-    
-    try:
-        # Step 1: Get Supabase client
-        supabase = get_supabase_client()
-        
-        # Step 2: Check if the project exists
-        logger.info("Verifying project exists in database...")
-        project_check = supabase.table("projects").select("id").eq("id", project_id).execute()
-        
-        if not project_check or not hasattr(project_check, 'data') or len(project_check.data) == 0:
-            logger.error(f"❌ Project with ID {project_id} not found in database")
-            return False
-        else:
-            logger.info(f"✅ Project ID {project_id} exists in database")
-        
-        # Step 3: Sanitize metadata to ensure JSON compatibility
-        logger.info("Sanitizing metadata...")
-        sanitized_metadata = ensure_json_serializable(metadata)
-        
-        # Step 4: Create a minimal update payload with essential fields only
-        # This is a workaround for potential payload size limitations
-        
-        # Create a simplified payload with just the critical information
-        essential_data = {}
-        
-        # Include data sources list but minimal metadata
-        if "data_sources" in sanitized_metadata:
-            essential_data["data_sources"] = sanitized_metadata["data_sources"]
-            logger.info(f"Including data_sources field: {sanitized_metadata['data_sources']}")
-        
-        # Simplify metadata to just include basic structure and minimal details
-        if "metadata" in sanitized_metadata and isinstance(sanitized_metadata["metadata"], list):
-            simplified_metadata = []
-            
-            # For each data source, include only essential info
-            for source_meta in sanitized_metadata["metadata"]:
-                essential_source = {
-                    "source": source_meta.get("source", "unknown"),
-                    "total_rows": source_meta.get("total_rows", 0),
-                    "total_columns": source_meta.get("total_columns", 0),
-                }
-                
-                # Add minimal column information if available
-                if "columns" in source_meta:
-                    # Just save column names and data types, not full metadata
-                    essential_source["columns"] = source_meta["columns"]
-                
-                simplified_metadata.append(essential_source)
-            
-            essential_data["metadata"] = simplified_metadata
-            logger.info(f"Created simplified metadata with {len(simplified_metadata)} sources")
-        
-        # Verify the data can be serialized to JSON
-        try:
-            json_string = json.dumps(essential_data)
-            logger.info(f"✅ Update data successfully serialized ({len(json_string)} chars)")
-            
-            # Check payload size and warn if it's still large
-            if len(json_string) > 5000:  # 5KB might be getting close to limits
-                logger.warning(f"Payload is still large ({len(json_string)} bytes) which might cause issues")
-        except Exception as json_err:
-            logger.error(f"❌ Failed to serialize update data: {str(json_err)}")
-            return False
-            
-        # Use the simplified data for the update
-        update_data = essential_data
-        
-        # Step 5: Perform the update with simplified, verified data
-        logger.info(f"Executing update for project {project_id}...")
-        
-        try:
-            # Test with a minimal query first
-            test_response = supabase.table("projects").update({"updated_at": "now()"}).eq("id", project_id).execute()
-            logger.info("Test update successful")
-            
-            # Now perform the actual update with our data
-            response = supabase.table("projects").update(update_data).eq("id", project_id).execute()
-            
-            if response and hasattr(response, 'data') and response.data:
-                logger.info(f"✅ Successfully updated project {project_id}")
-                return True
-            else:
-                logger.error("❌ Update operation failed - no data returned")
-                if hasattr(response, 'error'):
-                    logger.error(f"Error: {response.error}")
-                return False
-                
-        except Exception as e:
-            logger.error(f"❌ Exception during update: {str(e)}")
-            logger.error(traceback.format_exc())
-            return False
-            
-    except Exception as e:
-        logger.error(f"❌ Unexpected error: {str(e)}")
-        logger.error(traceback.format_exc())
-        return False
+    # Call the new function that uses the project_metadata table
+    return save_project_metadata(project_id, metadata)

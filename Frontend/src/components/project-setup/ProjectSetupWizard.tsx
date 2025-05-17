@@ -29,6 +29,25 @@ export default function ProjectSetupWizard() {
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(null); // Store raw response data
+  
+  // Analysis progress tracking
+  type AnalysisStep = {
+    name: string;
+    description: string;
+    status: 'waiting' | 'in-progress' | 'complete' | 'error';
+  };
+  
+  const [analysisSteps, setAnalysisSteps] = useState<AnalysisStep[]>([
+    { name: 'initialize', description: 'Initializing analysis process', status: 'waiting' },
+    { name: 'analyze', description: 'Analyzing project data', status: 'waiting' },
+    { name: 'save', description: 'Saving metadata to database', status: 'waiting' }
+  ]);
+  
+  const updateAnalysisStep = (stepName: string, status: AnalysisStep['status']) => {
+    setAnalysisSteps(steps => steps.map(step => 
+      step.name === stepName ? { ...step, status } : step
+    ));
+  };
 
   // Read step from URL parameters and restore form data when component mounts
   useEffect(() => {
@@ -149,19 +168,45 @@ export default function ProjectSetupWizard() {
 
   // Analysis trigger function  // Function to trigger analysis via backend API
   const triggerProjectAnalysis = async () => {
+    // Reset all states
     setIsAnalyzing(true);
     setAnalysisError(null);
     setAnalysisData(null);
+    
+    // Reset all steps to waiting
+    setAnalysisSteps(steps => steps.map(step => ({ ...step, status: 'waiting' as const })));
 
     try {
+      // Step 1: Initialize analysis
       console.log("⏳ Starting analysis for project ID:", projectId);
+      updateAnalysisStep('initialize', 'in-progress');
+      
       if (!projectId) {
         throw new Error("Project ID is missing. Cannot analyze without a project ID.");
       }
       
+      // Short delay to show step 1 progress
+      await new Promise(resolve => setTimeout(resolve, 800));
+      updateAnalysisStep('initialize', 'complete');
+      
+      // Step 2: Analyze data
+      updateAnalysisStep('analyze', 'in-progress');
+      
+      // Artificially delay to simulate analysis time (only for better UX)
+      await new Promise(resolve => setTimeout(resolve, 1500)); 
+      
+      // Make the actual API call
       const result = await analyzeProject(projectId);
+      updateAnalysisStep('analyze', 'complete');
       console.log("✅ Analysis completed successfully:", result);
-      setAnalysisData(result); // Store the raw response data
+      
+      // Step 3: Save results (this actually happens on the backend, but we show progress in UI)
+      updateAnalysisStep('save', 'in-progress');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Artificial delay
+      updateAnalysisStep('save', 'complete');
+      
+      // Store the response data and mark as complete
+      setAnalysisData(result);
       setAnalysisComplete(true);
     } catch (err: any) {
       const errorMessage = err?.response?.data?.detail || err?.message || "Unknown error";
@@ -170,6 +215,11 @@ export default function ProjectSetupWizard() {
         status: err?.response?.status,
         error: err 
       });
+      
+      // Mark current step as error
+      const currentStep = analysisSteps.find(step => step.status === 'in-progress')?.name || 'analyze';
+      updateAnalysisStep(currentStep, 'error');
+      
       setAnalysisError(`❌ Analysis failed: ${errorMessage}`);
     } finally {
       setIsAnalyzing(false);
@@ -448,9 +498,43 @@ export default function ProjectSetupWizard() {
           <div className="text-center p-8">
             {isAnalyzing ? (
               <>
-                <div className="animate-spin border-4 border-black border-t-transparent rounded-full w-12 h-12 mx-auto mb-4" />
-                <h2 className="text-lg font-medium">Analyzing your data...</h2>
-                <p className="text-gray-600 mt-2">Fetching analysis from the server</p>
+                <h2 className="text-lg font-medium mb-4">Analyzing your data...</h2>
+                
+                {/* Analysis steps progress indicators */}
+                <div className="w-full max-w-md mx-auto space-y-3 mb-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  {analysisSteps.map((step) => (
+                    <div key={step.name} className="flex items-start">
+                      {/* Step status icon */}
+                      <div className="mt-0.5 mr-3">
+                        {step.status === 'waiting' && (
+                          <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                        )}
+                        {step.status === 'in-progress' && (
+                          <div className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+                        )}
+                        {step.status === 'complete' && (
+                          <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          </div>
+                        )}
+                        {step.status === 'error' && (
+                          <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center">
+                            <span className="text-xs font-bold">!</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Step description */}
+                      <div className="flex-1">
+                        <p className={`font-medium ${step.status === 'error' ? 'text-red-600' : step.status === 'in-progress' ? 'text-blue-600' : step.status === 'complete' ? 'text-green-600' : 'text-gray-600'}`}>
+                          {step.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </>
             ) : analysisError ? (
               <>
