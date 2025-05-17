@@ -28,6 +28,7 @@ export default function ProjectSetupWizard() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisData, setAnalysisData] = useState<any>(null); // Store raw response data
 
   // Read step from URL parameters and restore form data when component mounts
   useEffect(() => {
@@ -150,6 +151,7 @@ export default function ProjectSetupWizard() {
   const triggerProjectAnalysis = async () => {
     setIsAnalyzing(true);
     setAnalysisError(null);
+    setAnalysisData(null);
 
     try {
       console.log("⏳ Starting analysis for project ID:", projectId);
@@ -159,6 +161,7 @@ export default function ProjectSetupWizard() {
       
       const result = await analyzeProject(projectId);
       console.log("✅ Analysis completed successfully:", result);
+      setAnalysisData(result); // Store the raw response data
       setAnalysisComplete(true);
     } catch (err: any) {
       const errorMessage = err?.response?.data?.detail || err?.message || "Unknown error";
@@ -462,12 +465,21 @@ export default function ProjectSetupWizard() {
             ) : (
               <>
                 <div className="text-green-500 mb-4 text-xl">✅ Analysis complete!</div>
-                <p className="text-gray-600 mb-5">
+                <p className="text-gray-600 mb-3">
                   Your data has been successfully analyzed and is ready for exploration.
-                  Click the button below to complete the setup process.
                 </p>
+                
+                {analysisData && (
+                  <div className="w-full max-w-4xl mx-auto mb-5">
+                    <h3 className="font-semibold mb-2 text-left">Raw Analysis Data:</h3>
+                    <pre className="bg-slate-100 p-4 rounded-md text-left overflow-auto max-h-60 text-sm">
+                      {JSON.stringify(analysisData, null, 2)}
+                    </pre>
+                  </div>
+                )}
+                
                 <button
-                  className="bg-black text-white py-2 px-5 rounded hover:bg-gray-800 transition-colors"
+                  className="bg-black text-white py-2 px-5 rounded hover:bg-gray-800 transition-colors mt-2"
                   onClick={handleFinish}
                 >
                   Complete Setup
