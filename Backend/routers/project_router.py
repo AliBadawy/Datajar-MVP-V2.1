@@ -59,7 +59,7 @@ async def get_projects(user: Dict = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching projects: {str(e)}")
         
-@router.get("/api/projects/{project_id}", response_model=ProjectResponse)
+@router.get("/projects/{project_id}", response_model=ProjectResponse)
 def get_project(project_id: int):
     """
     Retrieve a specific project by ID.
@@ -81,7 +81,7 @@ def get_project(project_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching project: {str(e)}")
         
-@router.get("/api/projects/{project_id}/context")
+@router.get("/projects/{project_id}/context")
 def get_project_context(project_id: int):
     """
     Retrieve the full context for a project including:
