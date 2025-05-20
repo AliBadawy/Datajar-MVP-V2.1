@@ -1,0 +1,1639 @@
+{
+  "project_id": 1,
+  "orders": [
+    {
+      "id": "1000000",
+      "reference_id": "INV-2023000",
+      "status": {
+        "name": "Pending",
+        "slug": "pending"
+      },
+      "date": {
+        "date": "2025-05-10 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 2119.87,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "cod",
+      "is_pending_payment": true,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "2228ecf0",
+          "name": "Hoodie",
+          "sku": "HOD008",
+          "quantity": 3,
+          "price": {
+            "amount": 179.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 539.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "c5b5be69",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 3,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 599.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "2903e8cd",
+          "name": "Sunglasses",
+          "sku": "SGL006",
+          "quantity": 3,
+          "price": {
+            "amount": 129.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 389.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "d7bd8766",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 1,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 199.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "201ad60b",
+          "name": "Sunglasses",
+          "sku": "SGL006",
+          "quantity": 3,
+          "price": {
+            "amount": 129.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 389.97,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": false,
+        "shippable": false
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000001",
+      "reference_id": "INV-2023001",
+      "status": {
+        "name": "Completed",
+        "slug": "completed"
+      },
+      "date": {
+        "date": "2025-04-18 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 349.99,
+        "currency": "SAR"
+      },
+      "can_cancel": false,
+      "can_reorder": true,
+      "payment_method": "apple_pay",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "f662a03f",
+          "name": "Sneakers",
+          "sku": "SNK003",
+          "quantity": 1,
+          "price": {
+            "amount": 349.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 349.99,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": true,
+        "shippable": false
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000002",
+      "reference_id": "INV-2023002",
+      "status": {
+        "name": "Pending",
+        "slug": "pending"
+      },
+      "date": {
+        "date": "2025-04-30 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 1659.91,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "card",
+      "is_pending_payment": true,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "1421281e",
+          "name": "Backpack",
+          "sku": "BKP005",
+          "quantity": 1,
+          "price": {
+            "amount": 149.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 149.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "be1cfe73",
+          "name": "Sneakers",
+          "sku": "SNK003",
+          "quantity": 3,
+          "price": {
+            "amount": 349.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 1049.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "05534516",
+          "name": "T-shirt",
+          "sku": "TSH001",
+          "quantity": 3,
+          "price": {
+            "amount": 99.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 299.96999999999997,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "f01f5e43",
+          "name": "Hat",
+          "sku": "HAT007",
+          "quantity": 2,
+          "price": {
+            "amount": 79.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 159.98,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": false,
+        "shippable": true
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000003",
+      "reference_id": "INV-2023003",
+      "status": {
+        "name": "Pending",
+        "slug": "pending"
+      },
+      "date": {
+        "date": "2025-05-06 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 799.96,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "bank_transfer",
+      "is_pending_payment": true,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "9d775204",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 3,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 599.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "6c4b70cb",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 1,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 199.99,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": false,
+        "shippable": true
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000004",
+      "reference_id": "INV-2023004",
+      "status": {
+        "name": "Processing",
+        "slug": "processing"
+      },
+      "date": {
+        "date": "2025-05-04 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 1209.92,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "card",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "ba063ceb",
+          "name": "T-shirt",
+          "sku": "TSH001",
+          "quantity": 1,
+          "price": {
+            "amount": 99.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 99.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "eea522c7",
+          "name": "Hat",
+          "sku": "HAT007",
+          "quantity": 1,
+          "price": {
+            "amount": 79.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 79.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "35a278bc",
+          "name": "Sunglasses",
+          "sku": "SGL006",
+          "quantity": 1,
+          "price": {
+            "amount": 129.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 129.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "53817eb8",
+          "name": "Hoodie",
+          "sku": "HOD008",
+          "quantity": 3,
+          "price": {
+            "amount": 179.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 539.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "dd8dcb85",
+          "name": "Hoodie",
+          "sku": "HOD008",
+          "quantity": 2,
+          "price": {
+            "amount": 179.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 359.98,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": false,
+        "shippable": false
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000005",
+      "reference_id": "INV-2023005",
+      "status": {
+        "name": "Completed",
+        "slug": "completed"
+      },
+      "date": {
+        "date": "2025-05-14 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 1129.91,
+        "currency": "SAR"
+      },
+      "can_cancel": false,
+      "can_reorder": true,
+      "payment_method": "cod",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "a53f3971",
+          "name": "Hoodie",
+          "sku": "HOD008",
+          "quantity": 2,
+          "price": {
+            "amount": 179.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 359.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "d322c35a",
+          "name": "Hat",
+          "sku": "HAT007",
+          "quantity": 1,
+          "price": {
+            "amount": 79.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 79.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "c3b44501",
+          "name": "Backpack",
+          "sku": "BKP005",
+          "quantity": 3,
+          "price": {
+            "amount": 149.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 449.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "fc97e13a",
+          "name": "Hat",
+          "sku": "HAT007",
+          "quantity": 3,
+          "price": {
+            "amount": 79.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 239.96999999999997,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": true,
+        "shippable": true
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000006",
+      "reference_id": "INV-2023006",
+      "status": {
+        "name": "Processing",
+        "slug": "processing"
+      },
+      "date": {
+        "date": "2025-05-14 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 1659.95,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "card",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "6f180391",
+          "name": "Watch",
+          "sku": "WTC004",
+          "quantity": 2,
+          "price": {
+            "amount": 599.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 1199.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "43886baf",
+          "name": "Hoodie",
+          "sku": "HOD008",
+          "quantity": 1,
+          "price": {
+            "amount": 179.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 179.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "2ebddda8",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 1,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 199.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "4a10ddb6",
+          "name": "Hat",
+          "sku": "HAT007",
+          "quantity": 1,
+          "price": {
+            "amount": 79.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 79.99,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": false,
+        "shippable": true
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000007",
+      "reference_id": "INV-2023007",
+      "status": {
+        "name": "Cancelled",
+        "slug": "cancelled"
+      },
+      "date": {
+        "date": "2025-04-19 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 499.97,
+        "currency": "SAR"
+      },
+      "can_cancel": false,
+      "can_reorder": false,
+      "payment_method": "cod",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "ff8bb388",
+          "name": "Backpack",
+          "sku": "BKP005",
+          "quantity": 1,
+          "price": {
+            "amount": 149.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 149.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "fdfde1c1",
+          "name": "Backpack",
+          "sku": "BKP005",
+          "quantity": 1,
+          "price": {
+            "amount": 149.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 149.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "b2fc09fa",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 1,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 199.99,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": false,
+        "shippable": false
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000008",
+      "reference_id": "INV-2023008",
+      "status": {
+        "name": "Pending",
+        "slug": "pending"
+      },
+      "date": {
+        "date": "2025-05-03 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 1779.95,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "apple_pay",
+      "is_pending_payment": true,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "c50d13c9",
+          "name": "Watch",
+          "sku": "WTC004",
+          "quantity": 2,
+          "price": {
+            "amount": 599.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 1199.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "d1347771",
+          "name": "T-shirt",
+          "sku": "TSH001",
+          "quantity": 1,
+          "price": {
+            "amount": 99.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 99.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "ad8d1b0a",
+          "name": "Sneakers",
+          "sku": "SNK003",
+          "quantity": 1,
+          "price": {
+            "amount": 349.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 349.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "2fa9efd8",
+          "name": "Sunglasses",
+          "sku": "SGL006",
+          "quantity": 1,
+          "price": {
+            "amount": 129.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 129.99,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": false,
+        "shippable": false
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000009",
+      "reference_id": "INV-2023009",
+      "status": {
+        "name": "Pending",
+        "slug": "pending"
+      },
+      "date": {
+        "date": "2025-04-17 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 1359.92,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "apple_pay",
+      "is_pending_payment": true,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "c303642a",
+          "name": "Hoodie",
+          "sku": "HOD008",
+          "quantity": 2,
+          "price": {
+            "amount": 179.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 359.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "0bb9ce31",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 2,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 399.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "423c1673",
+          "name": "Backpack",
+          "sku": "BKP005",
+          "quantity": 2,
+          "price": {
+            "amount": 149.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 299.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "30b3bffd",
+          "name": "Backpack",
+          "sku": "BKP005",
+          "quantity": 2,
+          "price": {
+            "amount": 149.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 299.98,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": true,
+        "shippable": false
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000010",
+      "reference_id": "INV-2023010",
+      "status": {
+        "name": "Cancelled",
+        "slug": "cancelled"
+      },
+      "date": {
+        "date": "2025-05-03 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 1429.9,
+        "currency": "SAR"
+      },
+      "can_cancel": false,
+      "can_reorder": false,
+      "payment_method": "cod",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "22ff0c38",
+          "name": "T-shirt",
+          "sku": "TSH001",
+          "quantity": 2,
+          "price": {
+            "amount": 99.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 199.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "b15a71e6",
+          "name": "Hoodie",
+          "sku": "HOD008",
+          "quantity": 3,
+          "price": {
+            "amount": 179.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 539.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "fcb85f59",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 1,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 199.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "fc4fbddb",
+          "name": "T-shirt",
+          "sku": "TSH001",
+          "quantity": 1,
+          "price": {
+            "amount": 99.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 99.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "857cc130",
+          "name": "Sunglasses",
+          "sku": "SGL006",
+          "quantity": 3,
+          "price": {
+            "amount": 129.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 389.97,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": true,
+        "shippable": false
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000011",
+      "reference_id": "INV-2023011",
+      "status": {
+        "name": "Completed",
+        "slug": "completed"
+      },
+      "date": {
+        "date": "2025-05-01 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 2359.91,
+        "currency": "SAR"
+      },
+      "can_cancel": false,
+      "can_reorder": true,
+      "payment_method": "card",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "364036cb",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 2,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 399.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "1ece6348",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 2,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 399.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "bcad1c18",
+          "name": "Sunglasses",
+          "sku": "SGL006",
+          "quantity": 2,
+          "price": {
+            "amount": 129.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 259.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "71770ca5",
+          "name": "Watch",
+          "sku": "WTC004",
+          "quantity": 1,
+          "price": {
+            "amount": 599.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 599.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "a7d84204",
+          "name": "Sneakers",
+          "sku": "SNK003",
+          "quantity": 2,
+          "price": {
+            "amount": 349.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 699.98,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": false,
+        "shippable": false
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000012",
+      "reference_id": "INV-2023012",
+      "status": {
+        "name": "Completed",
+        "slug": "completed"
+      },
+      "date": {
+        "date": "2025-04-24 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 2809.89,
+        "currency": "SAR"
+      },
+      "can_cancel": false,
+      "can_reorder": true,
+      "payment_method": "card",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "c9c29303",
+          "name": "Sneakers",
+          "sku": "SNK003",
+          "quantity": 1,
+          "price": {
+            "amount": 349.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 349.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "2e76772b",
+          "name": "Hoodie",
+          "sku": "HOD008",
+          "quantity": 2,
+          "price": {
+            "amount": 179.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 359.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "8fc881ab",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 3,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 599.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "b3844841",
+          "name": "Watch",
+          "sku": "WTC004",
+          "quantity": 2,
+          "price": {
+            "amount": 599.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 1199.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "808223da",
+          "name": "T-shirt",
+          "sku": "TSH001",
+          "quantity": 3,
+          "price": {
+            "amount": 99.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 299.96999999999997,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": true,
+        "shippable": true
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000013",
+      "reference_id": "INV-2023013",
+      "status": {
+        "name": "Cancelled",
+        "slug": "cancelled"
+      },
+      "date": {
+        "date": "2025-04-24 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 2499.93,
+        "currency": "SAR"
+      },
+      "can_cancel": false,
+      "can_reorder": false,
+      "payment_method": "bank_transfer",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "5e0eb1a6",
+          "name": "Backpack",
+          "sku": "BKP005",
+          "quantity": 2,
+          "price": {
+            "amount": 149.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 299.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "6ae75af7",
+          "name": "Watch",
+          "sku": "WTC004",
+          "quantity": 1,
+          "price": {
+            "amount": 599.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 599.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "667b07ea",
+          "name": "Watch",
+          "sku": "WTC004",
+          "quantity": 2,
+          "price": {
+            "amount": 599.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 1199.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "22c32934",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 2,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 399.98,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": false,
+        "shippable": true
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000014",
+      "reference_id": "INV-2023014",
+      "status": {
+        "name": "Pending",
+        "slug": "pending"
+      },
+      "date": {
+        "date": "2025-05-09 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 1409.89,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "cod",
+      "is_pending_payment": true,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "996fdd4c",
+          "name": "Backpack",
+          "sku": "BKP005",
+          "quantity": 2,
+          "price": {
+            "amount": 149.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 299.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "c83c2016",
+          "name": "Sunglasses",
+          "sku": "SGL006",
+          "quantity": 1,
+          "price": {
+            "amount": 129.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 129.99,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "acd794db",
+          "name": "Hat",
+          "sku": "HAT007",
+          "quantity": 3,
+          "price": {
+            "amount": 79.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 239.96999999999997,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "d1f4922d",
+          "name": "Hoodie",
+          "sku": "HOD008",
+          "quantity": 3,
+          "price": {
+            "amount": 179.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 539.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "a2f7d1dd",
+          "name": "T-shirt",
+          "sku": "TSH001",
+          "quantity": 2,
+          "price": {
+            "amount": 99.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 199.98,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": true,
+        "shippable": true
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000015",
+      "reference_id": "INV-2023015",
+      "status": {
+        "name": "Pending",
+        "slug": "pending"
+      },
+      "date": {
+        "date": "2025-05-06 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 779.97,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "bank_transfer",
+      "is_pending_payment": true,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "3e55d261",
+          "name": "Sneakers",
+          "sku": "SNK003",
+          "quantity": 2,
+          "price": {
+            "amount": 349.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 699.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "c418bea2",
+          "name": "Hat",
+          "sku": "HAT007",
+          "quantity": 1,
+          "price": {
+            "amount": 79.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 79.99,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": true,
+        "shippable": false
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000016",
+      "reference_id": "INV-2023016",
+      "status": {
+        "name": "Completed",
+        "slug": "completed"
+      },
+      "date": {
+        "date": "2025-04-20 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 159.98,
+        "currency": "SAR"
+      },
+      "can_cancel": false,
+      "can_reorder": true,
+      "payment_method": "apple_pay",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "696a1ed5",
+          "name": "Hat",
+          "sku": "HAT007",
+          "quantity": 2,
+          "price": {
+            "amount": 79.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 159.98,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": false,
+        "shippable": true
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000017",
+      "reference_id": "INV-2023017",
+      "status": {
+        "name": "Pending",
+        "slug": "pending"
+      },
+      "date": {
+        "date": "2025-05-09 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 2449.9399999999996,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "bank_transfer",
+      "is_pending_payment": true,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "815f2bd2",
+          "name": "Watch",
+          "sku": "WTC004",
+          "quantity": 2,
+          "price": {
+            "amount": 599.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 1199.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "c62bf958",
+          "name": "Sneakers",
+          "sku": "SNK003",
+          "quantity": 3,
+          "price": {
+            "amount": 349.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 1049.97,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "a9c4610c",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 1,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 199.99,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": true,
+        "shippable": false
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000018",
+      "reference_id": "INV-2023018",
+      "status": {
+        "name": "Cancelled",
+        "slug": "cancelled"
+      },
+      "date": {
+        "date": "2025-05-13 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 449.97,
+        "currency": "SAR"
+      },
+      "can_cancel": false,
+      "can_reorder": false,
+      "payment_method": "bank_transfer",
+      "is_pending_payment": false,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "d464903b",
+          "name": "Backpack",
+          "sku": "BKP005",
+          "quantity": 3,
+          "price": {
+            "amount": 149.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 449.97,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": true,
+        "shippable": true
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    },
+    {
+      "id": "1000019",
+      "reference_id": "INV-2023019",
+      "status": {
+        "name": "Pending",
+        "slug": "pending"
+      },
+      "date": {
+        "date": "2025-04-25 20:34:57",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "total": {
+        "amount": 1219.92,
+        "currency": "SAR"
+      },
+      "can_cancel": true,
+      "can_reorder": false,
+      "payment_method": "bank_transfer",
+      "is_pending_payment": true,
+      "pending_payment_ends_at": null,
+      "items": [
+        {
+          "id": "cef8dd3b",
+          "name": "Jeans",
+          "sku": "JNS002",
+          "quantity": 2,
+          "price": {
+            "amount": 199.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 399.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "ed2aac09",
+          "name": "T-shirt",
+          "sku": "TSH001",
+          "quantity": 2,
+          "price": {
+            "amount": 99.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 199.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "4dffed6f",
+          "name": "Sunglasses",
+          "sku": "SGL006",
+          "quantity": 2,
+          "price": {
+            "amount": 129.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 259.98,
+            "currency": "SAR"
+          }
+        },
+        {
+          "id": "1fd2f8ff",
+          "name": "Hoodie",
+          "sku": "HOD008",
+          "quantity": 2,
+          "price": {
+            "amount": 179.99,
+            "currency": "SAR"
+          },
+          "total": {
+            "amount": 359.98,
+            "currency": "SAR"
+          }
+        }
+      ],
+      "features": {
+        "digitalable": true,
+        "shippable": true
+      },
+      "exchange_rate": {
+        "rate": 3.75,
+        "exchange_currency": "USD"
+      }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "source": "CSV",
+  "total_rows": 100,
+  "total_columns": 9,
+  "columns": [
+    {
+      "name": "order_id",
+      "original_dtype": "object",
+      "dtype_detected": "string",
+      "null_count": 0,
+      "empty_string_count": 0,
+      "sample_values": [
+        "ORD-0001",
+        "ORD-0002",
+        "ORD-0003",
+        "ORD-0004",
+        "ORD-0005"
+      ],
+      "has_mixed_types": false,
+      "unique_count": 100,
+      "is_categorical": false,
+      "categories": [],
+      "mixed_types": [],
+      "datetime_parts": {},
+      "numerical_stats": {}
+    },
+    {
+      "name": "customer_name",
+      "original_dtype": "object",
+      "dtype_detected": "string",
+      "null_count": 0,
+      "empty_string_count": 0,
+      "sample_values": [
+        "Customer 1",
+        "Customer 2",
+        "Customer 3",
+        "Customer 4",
+        "Customer 5"
+      ],
+      "has_mixed_types": false,
+      "unique_count": 100,
+      "is_categorical": false,
+      "categories": [],
+      "mixed_types": [],
+      "datetime_parts": {},
+      "numerical_stats": {}
+    },
+    {
+      "name": "order_date",
+      "original_dtype": "datetime64[ns]",
+      "dtype_detected": "datetime",
+      "null_count": 0,
+      "empty_string_count": 0,
+      "sample_values": [
+        
