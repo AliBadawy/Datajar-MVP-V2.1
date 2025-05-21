@@ -62,29 +62,37 @@ export default function DynamicChart({ data, config }: DynamicChartProps) {
     </>
   );
 
+  // Determine which chart to render
+  const renderChart = () => {
+    if (chart_type === 'line') {
+      return (
+        <LineChart data={validData}>
+          {commonProps}
+          <Line type="monotone" dataKey={y_field} stroke="#2B52F5" strokeWidth={2} />
+        </LineChart>
+      );
+    } else if (chart_type === 'area') {
+      return (
+        <AreaChart data={validData}>
+          {commonProps}
+          <Area type="monotone" dataKey={y_field} stroke="#2B52F5" fill="#2B52F5" />
+        </AreaChart>
+      );
+    } else {
+      // Default to bar chart
+      return (
+        <BarChart data={validData}>
+          {commonProps}
+          <Bar dataKey={y_field} fill="#2B52F5" />
+        </BarChart>
+      );
+    }
+  };
+
   return (
     <div className="w-full h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        {(chart_type === 'bar' || !chart_type) && (
-          <BarChart data={validData}>
-            {commonProps}
-            <Bar dataKey={y_field} fill="#2B52F5" />
-          </BarChart>
-        )}
-
-        {chart_type === 'line' && (
-          <LineChart data={validData}>
-            {commonProps}
-            <Line type="monotone" dataKey={y_field} stroke="#2B52F5" strokeWidth={2} />
-          </LineChart>
-        )}
-
-        {chart_type === 'area' && (
-          <AreaChart data={validData}>
-            {commonProps}
-            <Area type="monotone" dataKey={y_field} stroke="#2B52F5" fill="#2B52F5" />
-          </AreaChart>
-        )}
+        {renderChart()}
       </ResponsiveContainer>
     </div>
   );
