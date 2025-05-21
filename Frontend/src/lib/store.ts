@@ -17,7 +17,7 @@ export interface Project {
 
 // Define Message interface
 export interface ChatMessage {
-  content: string;
+  content: string | any; // Can be a string or a structured response object
   isUser: boolean;
   isTyping?: boolean;
   intent?: string;
@@ -25,6 +25,7 @@ export interface ChatMessage {
   pandas_result?: any;
   narrative?: string;
   timestamp?: string;
+  rawResponse?: any; // For storing the complete API response
 }
 
 // Define dataframe interface for project context

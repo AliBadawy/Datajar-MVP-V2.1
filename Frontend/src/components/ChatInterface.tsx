@@ -178,28 +178,36 @@ const ChatInterface: React.FC = () => {
       });
       
       // Handle response based on type
-      const responseType = analyzeResponse.data.type;
-      console.log("Response type:", responseType);
+      console.log("Response data:", analyzeResponse.data);
       
       // After getting response, simulate typing animation
       setIsThinking(false);
       
-      // Create response content based on response type
-      let responseContent = '';
+      // Handle different response types (legacy format and new format)
+      const responseType = analyzeResponse.data.type;
+      let responseContent;
       
-      if (responseType === 'chat') {
+      if (responseType === 'plot' || responseType === 'dataframe' || responseType === 'text' || responseType === 'error') {
+        // New format - direct pass through to the renderer
+        responseContent = analyzeResponse.data;
+      } else if (responseType === 'chat') {
+        // Legacy chat format
         responseContent = analyzeResponse.data.response;
       } else if (responseType === 'data_analysis') {
-        // For data analysis, combine the narrative with pandas result
-        responseContent = `${analyzeResponse.data.narrative}\n\nRaw result: ${JSON.stringify(analyzeResponse.data.pandas_result, null, 2)}`;
+        // Legacy data analysis format
+        responseContent = analyzeResponse.data.narrative;
+      } else {
+        // Unknown format - just pass the raw data
+        responseContent = JSON.stringify(analyzeResponse.data, null, 2);
       }
       
-      // Add the AI response with typing animation
+      // Add the AI response with typing animation and raw response data
       addMessage({ 
         content: responseContent,
         isUser: false, 
         isTyping: true,
-        type: responseType
+        type: responseType,
+        rawResponse: analyzeResponse.data
       });
     } catch (error) {
       // Handle errors
