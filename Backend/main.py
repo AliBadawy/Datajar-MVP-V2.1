@@ -40,6 +40,7 @@ except Exception as e:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        # Local development
         "http://localhost:3000", 
         "http://localhost:5173", 
         "http://localhost:5174", 
@@ -55,8 +56,14 @@ app.add_middleware(
         "http://localhost:5184",
         "http://localhost:5185",
         "http://127.0.0.1:5185",
-        "http://127.0.0.1:65325",  # Add this line specifically for your current browser preview
-        "*",  # This will allow all origins - use only in development!
+        "http://127.0.0.1:65325",
+        
+        # Production domains
+        "https://delightful-zabaione-7c09dd.netlify.app",
+        "https://datajar-mvp-v21.netlify.app",
+        
+        # Wildcard (may not work in all cases when credentials are involved)
+        "*",
     ],
     allow_credentials=True,
     allow_methods=["*"],
