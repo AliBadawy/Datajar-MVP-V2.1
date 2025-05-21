@@ -473,21 +473,11 @@ def analyze(request: AnalyzeRequest):
             # Use the generated pandas_prompt from the analysis plan
             result = ask_pandasai(smart_df, analysis_plan["pandas_prompt"])
             
-            # Handle the updated response structure from PandasAI handler
-            # Extract the result value from the appropriate field based on response structure
-            result_value = result.get("response", result.get("value", ""))
+            # TESTING: Bypass the narrative generator and return raw PandasAI results
+            logger.info(f"DIRECT PANDASAI RESULT: {result}")
             
-            # Generate a natural language narrative using GPT with enhanced context
-            narrative = wrap_pandasai_result_with_gpt(
-                user_prompt=last_message["content"],
-                pandas_instruction=analysis_plan["pandas_prompt"],
-                pandas_result=result_value,
-                df=df,
-                persona=persona,
-                industry=industry,
-                business_context=context,
-                chat_history=history
-            )
+            # Set narrative to a simple message indicating we're in testing mode
+            narrative = "TESTING MODE: Direct PandasAI results without narrative generation"
             
             # Save assistant message to Supabase if project_id is provided
             if request.project_id:
