@@ -37,38 +37,56 @@ except Exception as e:
     # Continue app startup even if router imports fail
 
 # Configure CORS to allow communication with frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        # Local development
-        "http://localhost:3000", 
-        "http://localhost:5173", 
-        "http://localhost:5174", 
-        "http://localhost:5175", 
-        "http://localhost:5176", 
-        "http://localhost:5177", 
-        "http://localhost:5178", 
-        "http://localhost:5179", 
-        "http://localhost:5180", 
-        "http://localhost:5181", 
-        "http://localhost:5182", 
-        "http://localhost:5183", 
-        "http://localhost:5184",
-        "http://localhost:5185",
-        "http://127.0.0.1:5185",
-        "http://127.0.0.1:65325",
-        
-        # Production domains
-        "https://delightful-zabaione-7c09dd.netlify.app",
-        "https://datajar-mvp-v21.netlify.app",
-        
-        # Wildcard (may not work in all cases when credentials are involved)
-        "*",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# When using credentials=True, we need to explicitly list all origins
+# The wildcard "*" doesn't work with credentials
+production_domains = [
+    "https://delightful-zabaione-7c09dd.netlify.app",
+    "https://datajar-mvp-v21.netlify.app",
+    # Add any additional domains here
+]
+
+local_dev_domains = [
+    "http://localhost:3000", 
+    "http://localhost:5173", 
+    "http://localhost:5174", 
+    "http://localhost:5175", 
+    "http://localhost:5176", 
+    "http://localhost:5177", 
+    "http://localhost:5178", 
+    "http://localhost:5179", 
+    "http://localhost:5180", 
+    "http://localhost:5181", 
+    "http://localhost:5182", 
+    "http://localhost:5183", 
+    "http://localhost:5184",
+    "http://localhost:5185",
+    "http://127.0.0.1:5185",
+    "http://127.0.0.1:65325",
+]
+
+# Use environment variable to control CORS settings
+debug_mode = os.getenv("DEBUG_MODE", "False").lower() == "true"
+
+if debug_mode:
+    # In debug mode, accept all origins but don't use credentials
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,  # Set to False when using wildcard
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    logger.warning("Running in debug mode with permissive CORS settings")
+else:
+    # In production mode, list specific origins with credentials
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=production_domains + local_dev_domains,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    logger.info(f"CORS configured for {len(production_domains)} production domains")
 
 # Include routers if they were successfully imported
 try:
