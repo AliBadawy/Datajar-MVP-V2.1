@@ -473,11 +473,15 @@ def analyze(request: AnalyzeRequest):
             # Use the generated pandas_prompt from the analysis plan
             result = ask_pandasai(smart_df, analysis_plan["pandas_prompt"])
             
+            # Handle the updated response structure from PandasAI handler
+            # Extract the result value from the appropriate field based on response structure
+            result_value = result.get("response", result.get("value", ""))
+            
             # Generate a natural language narrative using GPT with enhanced context
             narrative = wrap_pandasai_result_with_gpt(
                 user_prompt=last_message["content"],
                 pandas_instruction=analysis_plan["pandas_prompt"],
-                pandas_result=result["value"],
+                pandas_result=result_value,
                 df=df,
                 persona=persona,
                 industry=industry,
@@ -499,17 +503,29 @@ def analyze(request: AnalyzeRequest):
                     print(f"Error saving data analysis result: {str(e)}")
                     # Continue processing even if saving fails
             
-            return {
-                "type": "data_analysis",
-                "response": narrative,
-                "result": result,
-                "metadata": {
+            # Prepare the response based on the result type
+            response_type = result.get("type", analysis_plan.get("result_type", "text"))
+            
+            # Create the base response
+            response = {
+                "type": response_type,
+                "response": result.get("response", narrative),  # Use result response or narrative
+                "narrative": narrative  # Always include the narrative for backward compatibility
+            }
+            
+            # Add plot configuration if available
+            if response_type == "plot" and "plot_config" in result:
+                response["plot_config"] = result["plot_config"]
+            # Add traditional metadata for backward compatibility
+            else:
+                response["metadata"] = {
                     "instruction": analysis_plan["pandas_prompt"],
                     "result_type": analysis_plan["result_type"],
                     "plot_type": analysis_plan.get("plot_type"),
                     "columns": analysis_plan["columns"]
                 }
-            }
+                
+            return response
             
         except Exception as e:
             error_msg = f"Error during data analysis: {str(e)}"
