@@ -1,18 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from models.schemas import AnalyzeRequest
-from handlers.openai_handler import (
-    get_openai_response,
-    classify_user_prompt,
-    wrap_pandasai_result_with_gpt
-)
-from handlers.pandasai_handler import initialize_smart_df, ask_pandasai
-from handlers.dataframe_handler import analyze_and_store_project_data
-from handlers.pandas_instruction_agent import generate_analysis_plan
-from supabase_helpers.message import save_message, get_messages_by_project
-from supabase_helpers.project import get_project_by_id, save_project_metadata
-from supabase_helpers.salla_order import get_salla_orders_for_project
-import pandas as pd
-from typing import Optional, List, Dict, Any
+from supabase_helpers.message import save_message
+from handlers.openai_handler import simplified_prompt_handler, get_simple_response
 import logging
 
 # Configure logging
@@ -276,357 +265,57 @@ def classify(request: AnalyzeRequest):
 @router.post("/api/analyze")
 def analyze(request: AnalyzeRequest):
     """
-    Endpoint that analyzes user messages and performs either chat or data analysis.
+    Simplified endpoint that acknowledges user messages.
     
     Args:
-        request (AnalyzeRequest): Object containing messages, optional dataframe, and context
+        request (AnalyzeRequest): Object containing messages and context
         
     Returns:
-        dict: Response with either chat content or data analysis results
+        dict: Simple acknowledgment response
     """
-    # Fallback values from the request
-    persona = request.persona
-    industry = request.industry
-    context = request.business_context
-    history = request.messages
-    project_analyzed = False  # Flag to track if data analysis has been run
+    # Extract the last message from request
+    if not request.messages or len(request.messages) == 0:
+        raise HTTPException(status_code=400, detail="No messages provided")
     
-    # Fetch project metadata and history if project_id is provided
-    if request.project_id:
-        # Get project metadata
-        project = get_project_by_id(request.project_id)
-        if project:
-            # Override with project values if available
-            persona = project.get("persona", persona)
-            industry = project.get("industry", industry)
-            context = project.get("context", context)
-            
-            # Fetch previous messages for this project
-            db_messages = get_messages_by_project(request.project_id)
-            
-            # Merge previous messages with current request messages
-            if db_messages:
-                # Only append the latest user message to avoid duplication
-                history = db_messages + [request.messages[-1]]
-    
-    # Initialize DataFrame if available in the request
-    df = None
-    if request.dataframe:
-        try:
-            # Check if we received a valid dataframe structure
-            if isinstance(request.dataframe, list):
-                # Handle list of records format
-                df = pd.DataFrame(request.dataframe)
-            elif isinstance(request.dataframe, dict):
-                # Handle dict format with validation to ensure all columns have same length
-                # First check if all arrays are the same length
-                lengths = {k: len(v) for k, v in request.dataframe.items() if isinstance(v, list)}
-                if lengths and len(set(lengths.values())) > 1:
-                    # Different lengths, need to normalize
-                    logger.warning(f"Received inconsistent column lengths: {lengths}")
-                    max_len = max(lengths.values())
-                    normalized_data = {}
-                    for k, v in request.dataframe.items():
-                        if isinstance(v, list):
-                            # Pad shorter arrays with None
-                            normalized_data[k] = v + [None] * (max_len - len(v))
-                        else:
-                            normalized_data[k] = v
-                    df = pd.DataFrame(normalized_data)
-                else:
-                    # All good, create DataFrame normally
-                    df = pd.DataFrame(request.dataframe)
-            else:
-                # Unknown format, create empty DataFrame
-                logger.warning(f"Received dataframe in unknown format: {type(request.dataframe)}")
-                df = pd.DataFrame()
-            
-            logger.info(f"Successfully created DataFrame with {len(df)} rows and {len(df.columns)} columns for intent classification")
-        except Exception as e:
-            logger.error(f"Error creating DataFrame from request: {str(e)}")
-            # Create empty DataFrame instead of failing
-            df = pd.DataFrame()
-            logger.info("Created empty DataFrame after error")
-            import traceback
-            logger.error(traceback.format_exc())
-    # If no data in request but project_id is provided, try to get Salla data
-    elif request.project_id:
-        try:
-            df = get_salla_orders_for_project(request.project_id)
-            if df is not None and not df.empty:
-                logger.info(f"Found Salla DataFrame for project {request.project_id} with {len(df)} rows for intent classification")
-        except Exception as e:
-            logger.warning(f"Error getting Salla data for intent classification: {str(e)}")
-            
-    # 1. Determine if it's a chat message or a data analysis query
+    # Get the last message
     last_message = request.messages[-1]
-    
-    # Get classification intent and add debug info
-    intent = classify_user_prompt(last_message["content"], df)
-    
-    # DEBUG: For testing, include the classification in the message
     user_message = last_message["content"]
-    debug_prefix = f"[DEBUG: Classified as '{intent}']"
     
-    # Log the classification
-    logger.info(f"Analyzed message: '{user_message[:50]}...' classified as: {intent}")
+    # Log information about the request
+    logger.info(f"Received message: '{user_message[:50]}...'")
     
-    # For testing, add debug info about df
-    df_info = "No DataFrame available"
-    if df is not None:
-        df_info = f"DataFrame with {len(df)} rows and {len(df.columns)} columns"
-        if len(df) > 0:
-            df_info += f". Sample columns: {list(df.columns)[:5]}"
+    # Always classify as chat using the simplified handler
+    intent = simplified_prompt_handler(user_message)
     
-    # Add debug info to last_message for context in later stages
-    last_message["debug_info"] = {
-        "intent": intent,
-        "df_info": df_info,
-        "has_data": df is not None and not df.empty
-    }
-    
+    # Get a simple response message
+    response_text = get_simple_response(user_message)
     
     # Save user message to Supabase if project_id is provided
     if request.project_id:
         try:
+            # Save user message
             save_message(
                 project_id=request.project_id,
                 role="user",
-                content=last_message["content"],
-                intent=intent
+                content=user_message,
+                intent=intent  # Will always be "chat"
             )
+            
+            # Save assistant response
+            save_message(
+                project_id=request.project_id,
+                role="assistant",
+                content=response_text,
+                intent=intent  # Will always be "chat"
+            )
+            
+            logger.info(f"Saved messages for project {request.project_id}")
         except Exception as e:
-            print(f"Error saving user message: {str(e)}")
+            logger.error(f"Error saving messages: {str(e)}")
             # Continue processing even if saving fails
-
-    # 2. If it's a generic chat message or no data provided → GPT-only response
-    if intent == "chat":
-        # Initialize project metadata and data analysis
-        project_metadata = None
-        data_analysis = None
-        
-        # Try to get project metadata if project_id is available
-        if request.project_id:
-            try:
-                from supabase_helpers.project import get_project_metadata
-                project_metadata = get_project_metadata(request.project_id)
-                logger.info(f"Loaded project metadata for chat: {project_metadata is not None}")
-            except Exception as e:
-                logger.warning(f"Error loading project metadata for chat: {str(e)}")
-        
-        # Generate DataFrame analysis if data is available
-        if df is not None and not df.empty:
-            try:
-                from utils.analyze_dataframe import analyze_dataframe
-                data_analysis = analyze_dataframe(df)
-                logger.info(f"Generated data analysis for chat with {len(data_analysis.keys()) if data_analysis else 0} metrics")
-            except Exception as e:
-                logger.warning(f"Error analyzing DataFrame for chat: {str(e)}")
-        
-        # Call get_openai_response with all available context
-        chat_response = get_openai_response(
-            messages=history, 
-            persona=persona, 
-            industry=industry, 
-            business_context=context,
-            project_metadata=project_metadata["metadata"] if project_metadata else None,
-            data_analysis=data_analysis,
-            df=df
-        )
-        
-        # Add debug information to the response for troubleshooting
-        df_info = last_message.get('debug_info', {}).get('df_info', 'None')
-        debug_response = f"[DEBUG - Intent Classification: '{intent}', Data: {df_info}]\n\n{chat_response}"
-        
-        # Save assistant message to Supabase if project_id is provided
-        if request.project_id:
-            try:
-                save_message(
-                    project_id=request.project_id,
-                    role="assistant",
-                    content=debug_response,
-                    intent="chat"
-                )
-            except Exception as e:
-                print(f"Error saving assistant message: {str(e)}")
-                # Continue processing even if saving fails
-        
-        return {"type": "chat", "response": debug_response}
-
-    # 3. Otherwise → Full data analysis flow
-    elif intent == "data_analysis":
-        # Initialize DataFrame
-        df = None
-        
-        # If we have serialized data from the request, use that
-        if request.dataframe:
-            try:
-                # Check if we received a valid dataframe structure
-                if isinstance(request.dataframe, list):
-                    # Handle list of records format
-                    df = pd.DataFrame(request.dataframe)
-                elif isinstance(request.dataframe, dict):
-                    # Handle dict format with validation to ensure all columns have same length
-                    # First check if all arrays are the same length
-                    lengths = {k: len(v) for k, v in request.dataframe.items() if isinstance(v, list)}
-                    if lengths and len(set(lengths.values())) > 1:
-                        # Different lengths, need to normalize
-                        logger.warning(f"Received inconsistent column lengths: {lengths}")
-                        max_len = max(lengths.values())
-                        normalized_data = {}
-                        for k, v in request.dataframe.items():
-                            if isinstance(v, list):
-                                # Pad shorter arrays with None
-                                normalized_data[k] = v + [None] * (max_len - len(v))
-                            else:
-                                normalized_data[k] = v
-                        df = pd.DataFrame(normalized_data)
-                    else:
-                        # All good, create DataFrame normally
-                        df = pd.DataFrame(request.dataframe)
-                else:
-                    # Unknown format, create empty DataFrame
-                    logger.warning(f"Received dataframe in unknown format: {type(request.dataframe)}")
-                    df = pd.DataFrame()
-                
-                logger.info(f"Successfully created DataFrame with {len(df)} rows and {len(df.columns)} columns")
-            except Exception as e:
-                logger.error(f"Error creating DataFrame from request: {str(e)}")
-                # Create empty DataFrame instead of failing
-                df = pd.DataFrame()
-                logger.info("Created empty DataFrame after error")
-                import traceback
-                logger.error(traceback.format_exc())
-        # If no data from request, try to get it from Salla for this project
-        elif request.project_id:
-            try:
-                logger.info(f"Attempting to get Salla data for project_id: {request.project_id}")
-                
-                # Use a safer approach with explicit checks
-                try:
-                    df = get_salla_orders_for_project(request.project_id)
-                    if df is None:
-                        logger.warning(f"No Salla data returned for project {request.project_id}")
-                        df = pd.DataFrame()  # Ensure we have an empty DataFrame not None
-                    else:
-                        logger.info(f"Using Salla DataFrame for project {request.project_id} with {len(df)} rows")
-                except Exception as salla_err:
-                    logger.error(f"Error fetching Salla data: {str(salla_err)}")
-                    # Create an empty DataFrame instead of returning None
-                    df = pd.DataFrame()
-                
-                # Run data analysis if we have data and it hasn't been analyzed yet
-                if not df.empty and not project_analyzed:
-                    try:
-                        logger.info(f"Triggering data analysis for project {request.project_id}")
-                        analyze_and_store_project_data(request.project_id, df, "Salla")
-                        project_analyzed = True
-                        logger.info("Data analysis completed successfully")
-                    except Exception as analysis_err:
-                        logger.error(f"Error during data analysis: {str(analysis_err)}")
-                        # Continue with the request even if analysis fails
-            except Exception as e:
-                logger.error(f"Unhandled error in Salla integration: {str(e)}")
-                import traceback
-                logger.error(traceback.format_exc())
-                # Fall back to chat response if data loading fails
-                response = get_openai_response(history, persona, industry, context)
-                return {"type": "chat", "response": response}
-        
-        if df is None or df.empty:
-            logger.warning("No data available for analysis, falling back to chat response")
-            response = get_openai_response(history, persona, industry, context)
-            return {"type": "chat", "response": response}
-        
-        # Initialize project metadata and data analysis if available
-        project_metadata_dict = None
-        data_analysis_dict = None
-        data_source = "Salla" if request.project_id else "CSV"
-        
-        # Try to get project metadata if project_id is available
-        if request.project_id:
-            try:
-                from supabase_helpers.project import get_project_metadata
-                project_metadata_obj = get_project_metadata(request.project_id)
-                if project_metadata_obj:
-                    project_metadata_dict = project_metadata_obj.get("metadata", {})
-                    logger.info(f"Loaded project metadata for analysis: {project_metadata_dict is not None}")
-            except Exception as e:
-                logger.warning(f"Error loading project metadata for analysis: {str(e)}")
-        
-        # Generate DataFrame analysis if not available from metadata
-        if not project_metadata_dict:
-            try:
-                from utils.analyze_dataframe import analyze_dataframe
-                data_analysis_dict = analyze_dataframe(df)
-                logger.info(f"Generated data analysis with {len(data_analysis_dict.keys()) if data_analysis_dict else 0} metrics")
-            except Exception as e:
-                logger.warning(f"Error analyzing DataFrame: {str(e)}")
-        
-        # Generate intelligent analysis plan using the context-aware agent
-        analysis_plan = generate_analysis_plan(
-            messages=history,
-            df=df,
-            metadata=project_metadata_dict or data_analysis_dict,
-            persona=persona,
-            industry=industry,
-            business_context=context,
-            data_source=data_source
-        )
-        
-        logger.info(f"Analysis plan generated - Type: {analysis_plan['result_type']}, Columns: {analysis_plan['columns']}")
-        
-        # Initialize smart DataFrame and execute the analysis
-        smart_df = initialize_smart_df(df)
-        
-        try:
-            # Use the generated pandas_prompt from the analysis plan
-            result = ask_pandasai(smart_df, analysis_plan["pandas_prompt"])
-            
-            # TESTING: Bypass the narrative generator and return raw PandasAI results
-            logger.info(f"DIRECT PANDASAI RESULT: {result}")
-            
-            # Set narrative to a simple message indicating we're in testing mode
-            narrative = "TESTING MODE: Direct PandasAI results without narrative generation"
-            
-            # Save assistant message to Supabase if project_id is provided
-            if request.project_id:
-                try:
-                    # We store the narrative as the content since it includes the analysis
-                    save_message(
-                        project_id=request.project_id,
-                        role="assistant",
-                        content=narrative,
-                        intent="data_analysis"
-                    )
-                except Exception as e:
-                    print(f"Error saving data analysis result: {str(e)}")
-                    # Continue processing even if saving fails
-            
-            # Prepare the response based on the result type
-            response_type = result.get("type", analysis_plan.get("result_type", "text"))
-            
-            # Create the base response
-            response = {
-                "type": response_type,
-                "response": result.get("response", narrative),  # Use result response or narrative
-                "narrative": f"[DEBUG - Intent Classification: '{intent}', Data: {last_message.get('debug_info', {}).get('df_info', 'None')}]\n\n{narrative}"  # Add debug info to narrative
-            }
-            
-            # Add plot configuration if available
-            if response_type == "plot" and "plot_config" in result:
-                response["plot_config"] = result["plot_config"]
-            # Add traditional metadata for backward compatibility
-            else:
-                response["metadata"] = {
-                    "instruction": analysis_plan["pandas_prompt"],
-                    "result_type": analysis_plan["result_type"],
-                    "plot_type": analysis_plan.get("plot_type"),
-                    "columns": analysis_plan["columns"]
-                }
-                
-            return response
-            
-        except Exception as e:
-            error_msg = f"Error during data analysis: {str(e)}"
-            return {"type": "error", "response": error_msg}
+    
+    # Return a simple acknowledgment
+    return {
+        "type": "chat",
+        "response": response_text
+    }
