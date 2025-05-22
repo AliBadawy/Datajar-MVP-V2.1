@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from models.schemas import AnalyzeRequest
 from supabase_helpers.message import save_message
+from supabase_helpers.salla_order import get_salla_orders_for_project
 from handlers.openai_handler import simplified_prompt_handler, get_simple_response
 import logging
+import pandas as pd
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -265,13 +267,13 @@ def classify(request: AnalyzeRequest):
 @router.post("/api/analyze")
 def analyze(request: AnalyzeRequest):
     """
-    Simplified endpoint that acknowledges user messages.
+    Simplified endpoint that acknowledges user messages and checks for Salla data.
     
     Args:
         request (AnalyzeRequest): Object containing messages and context
         
     Returns:
-        dict: Simple acknowledgment response
+        dict: Response with acknowledgment and Salla data status
     """
     # Extract the last message from request
     if not request.messages or len(request.messages) == 0:
@@ -287,8 +289,32 @@ def analyze(request: AnalyzeRequest):
     # Always classify as chat using the simplified handler
     intent = simplified_prompt_handler(user_message)
     
-    # Get a simple response message
-    response_text = get_simple_response(user_message)
+    # Check if Salla data is available for this project
+    has_salla_data = False
+    data_info = "No Salla data available."
+    salla_data = None
+    
+    if request.project_id:
+        try:
+            # Try to get Salla data
+            salla_data = get_salla_orders_for_project(request.project_id)
+            
+            if salla_data is not None and not salla_data.empty:
+                has_salla_data = True
+                num_orders = len(salla_data)
+                num_columns = len(salla_data.columns)
+                data_info = f"Salla data available: {num_orders} orders with {num_columns} columns."
+                logger.info(f"Found Salla data for project {request.project_id}: {num_orders} orders")
+            else:
+                logger.info(f"No Salla data found for project {request.project_id}")
+        except Exception as e:
+            logger.error(f"Error checking Salla data: {str(e)}")
+            data_info = f"Error checking Salla data: {str(e)}"
+    
+    # Get a response message that includes Salla data status
+    response_text = f"Message received: '{user_message[:30]}...'"
+    if request.project_id:
+        response_text += f"\n\n{data_info}"
     
     # Save user message to Supabase if project_id is provided
     if request.project_id:
@@ -314,8 +340,19 @@ def analyze(request: AnalyzeRequest):
             logger.error(f"Error saving messages: {str(e)}")
             # Continue processing even if saving fails
     
-    # Return a simple acknowledgment
-    return {
+    # Prepare the response
+    response = {
         "type": "chat",
-        "response": response_text
+        "response": response_text,
     }
+    
+    # Add Salla data if available
+    if has_salla_data and salla_data is not None:
+        try:
+            # Convert DataFrame to dict for JSON serialization
+            response["salla_data"] = salla_data.to_dict(orient="records")
+            logger.info(f"Attached Salla data to response")
+        except Exception as e:
+            logger.error(f"Error attaching Salla data: {str(e)}")
+    
+    return response
