@@ -41,18 +41,76 @@ def classify_user_prompt(prompt: str, df: Optional[pd.DataFrame] = None) -> str:
         str: 'chat' or 'data_analysis'
     """
     try:
-        # Get metadata about the dataset if available
-        metadata_str = json.dumps(analyze_dataframe(df), indent=2) if df is not None else "No dataset provided"
+        # Enhanced data context preparation
+        data_context = {}
+        
+        if df is not None and not df.empty:
+            # Include actual column names and sample data for better context
+            data_context["columns"] = list(df.columns)
+            data_context["row_count"] = len(df)
+            data_context["column_count"] = len(df.columns)
+            
+            # Only include sample data if we have a reasonable number of rows
+            if len(df) > 0:
+                # Get the first few rows as a sample (convert to dict for serialization)
+                try:
+                    data_context["sample_data"] = df.head(3).to_dict(orient="records")
+                except:
+                    # Fallback if to_dict fails
+                    data_context["sample_data"] = "[Sample data available but could not be converted]"
+        
+        # Add full data analysis if the dataframe is not too large
+        if df is not None and not df.empty and len(df) < 10000:
+            try:
+                data_context["analysis"] = analyze_dataframe(df)
+            except Exception as e:
+                logger.warning(f"Error analyzing dataframe: {str(e)}")
+                data_context["analysis_error"] = str(e)
+        
+        # Convert to string format for the prompt
+        if data_context:
+            metadata_str = json.dumps(data_context, indent=2)
+        else:
+            metadata_str = "No dataset provided"
+            
+        # Common keywords and phrases that indicate data analysis intent
+        # These are just examples to guide the model, not strict rules
+        data_keywords = [
+            "how many", "count", "total", "average", "mean", "median", "sum", 
+            "maximum", "minimum", "chart", "graph", "plot", "visualization",
+            "breakdown", "compare", "comparison", "trend", "analyze", "analysis",
+            "orders", "sales", "revenue", "products", "customers", "show me",
+            "list", "display", "highest", "lowest", "top", "bottom", "distribution",
+            "calculate", "percentage", "ratio", "proportion", "frequency",
+            "summarize", "aggregate", "group by", "filter", "where", "when",
+            "most popular", "least popular", "best selling", "worst selling",
+            "growth", "decline", "increase", "decrease", "change", "difference"
+        ]
 
-        # Create a context-aware classification prompt
+        # Create a context-aware classification prompt with better instructions
         messages = [
             {"role": "system", "content": (
-                "You are a classification assistant.\n"
-                "Your job is to classify the user's intent into:\n"
-                "- 'chat': general, exploratory, follow-up, or outside-the-data questions\n"
-                "- 'data_analysis': requests involving data filtering, comparison, charts, summaries\n"
-                "Only reply with one word: 'chat' or 'data_analysis'.\n\n"
-                f"Dataset context:\n{metadata_str}"
+                "You are an advanced intent classification system specializing in data analytics and business intelligence.\n\n"
+                "YOUR TASK:\n"
+                "Analyze the user's query and classify it as either 'data_analysis' or 'chat'.\n\n"
+                "CLASSIFICATION GUIDELINES:\n"
+                "1. 'data_analysis': Queries that seek insights, statistics, visualizations, or information that can be derived from data.\n"
+                "2. 'chat': General conversation, small talk, or questions not answerable from the available data.\n\n"
+                
+                "IMPORTANT: These are flexible guidelines, not rigid rules. Use your full intelligence to understand the user's true intent.\n\n"
+                
+                "Common indicators of data analysis intent include (but are NOT limited to):\n"
+                f"{', '.join(data_keywords[:20])}\n"
+                f"{', '.join(data_keywords[20:40])}\n"
+                f"{', '.join(data_keywords[40:])}\n\n"
+                
+                "ALWAYS ERR ON THE SIDE OF DATA ANALYSIS when the query is ambiguous or could potentially be answered with data.\n\n"
+                
+                "AVAILABLE DATA CONTEXT:\n"
+                f"{metadata_str}\n\n"
+                
+                "YOU MUST RESPOND WITH EXACTLY ONE WORD: either 'chat' or 'data_analysis'\n"
+                "Do not include any explanation or additional text."
             )},
             {"role": "user", "content": prompt}
         ]
@@ -60,7 +118,8 @@ def classify_user_prompt(prompt: str, df: Optional[pd.DataFrame] = None) -> str:
         # Use GPT-4o for better classification accuracy
         response = get_client().chat.completions.create(
             model="gpt-4o",
-            messages=messages
+            messages=messages,
+            temperature=0.0  # Zero temperature for maximum consistency
         )
         
         intent = response.choices[0].message.content.strip().lower()
