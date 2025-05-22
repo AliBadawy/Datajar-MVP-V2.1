@@ -360,8 +360,30 @@ def analyze(request: AnalyzeRequest):
             
     # 1. Determine if it's a chat message or a data analysis query
     last_message = request.messages[-1]
+    
+    # Get classification intent and add debug info
     intent = classify_user_prompt(last_message["content"], df)
-    logger.info(f"Analyzed message: '{last_message['content'][:50]}...' classified as: {intent}")
+    
+    # DEBUG: For testing, include the classification in the message
+    user_message = last_message["content"]
+    debug_prefix = f"[DEBUG: Classified as '{intent}']"
+    
+    # Log the classification
+    logger.info(f"Analyzed message: '{user_message[:50]}...' classified as: {intent}")
+    
+    # For testing, add debug info about df
+    df_info = "No DataFrame available"
+    if df is not None:
+        df_info = f"DataFrame with {len(df)} rows and {len(df.columns)} columns"
+        if len(df) > 0:
+            df_info += f". Sample columns: {list(df.columns)[:5]}"
+    
+    # Add debug info to last_message for context in later stages
+    last_message["debug_info"] = {
+        "intent": intent,
+        "df_info": df_info,
+        "has_data": df is not None and not df.empty
+    }
     
     
     # Save user message to Supabase if project_id is provided
@@ -402,7 +424,7 @@ def analyze(request: AnalyzeRequest):
                 logger.warning(f"Error analyzing DataFrame for chat: {str(e)}")
         
         # Call get_openai_response with all available context
-        response = get_openai_response(
+        chat_response = get_openai_response(
             messages=history, 
             persona=persona, 
             industry=industry, 
@@ -412,20 +434,24 @@ def analyze(request: AnalyzeRequest):
             df=df
         )
         
-        # Save assistant response to Supabase if project_id is provided
+        # Add debug information to the response for troubleshooting
+        df_info = last_message.get('debug_info', {}).get('df_info', 'None')
+        debug_response = f"[DEBUG - Intent Classification: '{intent}', Data: {df_info}]\n\n{chat_response}"
+        
+        # Save assistant message to Supabase if project_id is provided
         if request.project_id:
             try:
                 save_message(
                     project_id=request.project_id,
                     role="assistant",
-                    content=response,
+                    content=debug_response,
                     intent="chat"
                 )
             except Exception as e:
                 print(f"Error saving assistant message: {str(e)}")
                 # Continue processing even if saving fails
         
-        return {"type": "chat", "response": response}
+        return {"type": "chat", "response": debug_response}
 
     # 3. Otherwise → Full data analysis flow
     elif intent == "data_analysis":
@@ -549,7 +575,7 @@ def analyze(request: AnalyzeRequest):
             response = {
                 "type": response_type,
                 "response": result.get("response", narrative),  # Use result response or narrative
-                "narrative": narrative  # Always include the narrative for backward compatibility
+                "narrative": f"[DEBUG - Intent Classification: '{intent}', Data: {last_message.get('debug_info', {}).get('df_info', 'None')}]\n\n{narrative}"  # Add debug info to narrative
             }
             
             # Add plot configuration if available
