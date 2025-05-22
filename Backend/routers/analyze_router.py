@@ -311,10 +311,48 @@ def analyze(request: AnalyzeRequest):
             logger.error(f"Error checking Salla data: {str(e)}")
             data_info = f"Error checking Salla data: {str(e)}"
     
-    # Get a response message that includes Salla data status
+    # Get a response message that includes Salla data status and formatted table
     response_text = f"Message received: '{user_message[:30]}...'"
     if request.project_id:
         response_text += f"\n\n{data_info}"
+        
+        # Add a formatted DataFrame representation to the chat if data is available
+        if has_salla_data and salla_data is not None:
+            try:
+                # Create a text representation of the DataFrame
+                # First, limit to 10 rows max for readability
+                display_df = salla_data.head(10) if len(salla_data) > 10 else salla_data
+                
+                # Limit columns if there are too many (first 5 columns)
+                if len(display_df.columns) > 5:
+                    display_columns = list(display_df.columns)[:5]
+                    display_df = display_df[display_columns]
+                    response_text += f"\n\nShowing first 5 columns of {len(salla_data.columns)} total columns."
+                
+                # Create a markdown table representation
+                table_text = "\n\n```\n"
+                # Add header
+                headers = display_df.columns
+                header_row = "| " + " | ".join(str(col) for col in headers) + " |"
+                separator_row = "| " + " | ".join(["-" * len(str(col)) for col in headers]) + " |"
+                table_text += header_row + "\n" + separator_row + "\n"
+                
+                # Add rows
+                for _, row in display_df.iterrows():
+                    row_text = "| " + " | ".join(str(val)[:20] for val in row) + " |"
+                    table_text += row_text + "\n"
+                
+                table_text += "```\n"
+                
+                # Show total count if limited
+                if len(salla_data) > 10:
+                    table_text += f"\n*Showing 10 of {len(salla_data)} total orders*"
+                
+                response_text += table_text
+                logger.info("Added formatted DataFrame to response")
+            except Exception as e:
+                logger.error(f"Error formatting DataFrame for display: {str(e)}")
+                response_text += "\n\nError formatting data for display."
     
     # Save user message to Supabase if project_id is provided
     if request.project_id:
