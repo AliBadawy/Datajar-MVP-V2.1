@@ -404,21 +404,35 @@ def analyze(request: AnalyzeRequest):
         # If no data from request, try to get it from Salla for this project
         elif request.project_id:
             try:
-                df = get_salla_orders_for_project(request.project_id)
-                logger.info(f"Using Salla DataFrame for project {request.project_id} with {len(df) if df is not None else 0} rows")
+                logger.info(f"Attempting to get Salla data for project_id: {request.project_id}")
+                
+                # Use a safer approach with explicit checks
+                try:
+                    df = get_salla_orders_for_project(request.project_id)
+                    if df is None:
+                        logger.warning(f"No Salla data returned for project {request.project_id}")
+                        df = pd.DataFrame()  # Ensure we have an empty DataFrame not None
+                    else:
+                        logger.info(f"Using Salla DataFrame for project {request.project_id} with {len(df)} rows")
+                except Exception as salla_err:
+                    logger.error(f"Error fetching Salla data: {str(salla_err)}")
+                    # Create an empty DataFrame instead of returning None
+                    df = pd.DataFrame()
                 
                 # Run data analysis if we have data and it hasn't been analyzed yet
-                if df is not None and not df.empty and not project_analyzed:
+                if not df.empty and not project_analyzed:
                     try:
                         logger.info(f"Triggering data analysis for project {request.project_id}")
                         analyze_and_store_project_data(request.project_id, df, "Salla")
                         project_analyzed = True
                         logger.info("Data analysis completed successfully")
-                    except Exception as e:
-                        logger.error(f"Error during data analysis: {str(e)}")
+                    except Exception as analysis_err:
+                        logger.error(f"Error during data analysis: {str(analysis_err)}")
                         # Continue with the request even if analysis fails
             except Exception as e:
-                logger.error(f"Error loading Salla data: {str(e)}")
+                logger.error(f"Unhandled error in Salla integration: {str(e)}")
+                import traceback
+                logger.error(traceback.format_exc())
                 # Fall back to chat response if data loading fails
                 response = get_openai_response(history, persona, industry, context)
                 return {"type": "chat", "response": response}
