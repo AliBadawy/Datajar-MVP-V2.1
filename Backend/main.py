@@ -37,49 +37,82 @@ except Exception as e:
     # Continue app startup even if router imports fail
 
 # Configure CORS to allow communication with frontend
-# Much simpler approach to ensure CORS headers are always applied
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.cors import CORSMiddleware as StarletteMiddleware
+from fastapi.responses import JSONResponse
+from starlette.requests import Request
+from starlette.middleware.base import BaseHTTPMiddleware
 
-# Force direct CORS headers for Netlify domains
-@app.middleware("http")
-async def add_cors_headers(request, call_next):
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "https://delightful-zabaione-7c09dd.netlify.app"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
-    
-    # Log that we're adding headers manually
-    logger.info(f"Added manual CORS headers to response")
-    return response
+# Define allowed origins
+ALLOWED_ORIGINS = [
+    "https://delightful-zabaione-7c09dd.netlify.app",
+    "https://datajar-mvp-v21.netlify.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:5176",
+    "http://localhost:5177",
+    "http://localhost:5178", 
+    "http://localhost:5179", 
+    "http://localhost:5180", 
+    "http://localhost:5181", 
+    "http://localhost:5182", 
+    "http://localhost:5183", 
+    "http://localhost:5184",
+    "http://localhost:5185",
+    "http://127.0.0.1:5185",
+    "http://127.0.0.1:65325",
+]
 
-# Still add the middleware as a backup
+# Custom middleware that handles preflight OPTIONS requests
+class CustomCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # For preflight OPTIONS requests, return an immediate response with CORS headers
+        if request.method == "OPTIONS":
+            response = JSONResponse(content={})
+            origin = request.headers.get("origin", "*")
+            
+            # If origin is in our allowed list or we're allowing all origins
+            if origin in ALLOWED_ORIGINS or "*" in ALLOWED_ORIGINS:
+                response.headers["Access-Control-Allow-Origin"] = origin
+            else:
+                # Default to our main domain
+                response.headers["Access-Control-Allow-Origin"] = "https://delightful-zabaione-7c09dd.netlify.app"
+                
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Max-Age"] = "600"  # Cache preflight for 10 minutes
+            
+            logger.info(f"Handling preflight OPTIONS request with CORS headers")
+            return response
+        
+        # For non-OPTIONS requests, proceed with normal processing
+        response = await call_next(request)
+        
+        # Then add CORS headers to every response
+        origin = request.headers.get("origin", "*")
+        if origin in ALLOWED_ORIGINS or "*" in ALLOWED_ORIGINS:
+            response.headers["Access-Control-Allow-Origin"] = origin
+        else:
+            # Default to our main domain
+            response.headers["Access-Control-Allow-Origin"] = "https://delightful-zabaione-7c09dd.netlify.app"
+            
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        logger.info(f"Added CORS headers to {request.method} response")
+        return response
+
+# Add our custom CORS middleware first - this will take precedence
+app.add_middleware(CustomCORSMiddleware)
+
+# Also add the standard CORS middleware as a backup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://delightful-zabaione-7c09dd.netlify.app",
-        "https://datajar-mvp-v21.netlify.app",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:5176",
-        "http://localhost:5177",
-        "http://localhost:5178", 
-        "http://localhost:5179", 
-        "http://localhost:5180", 
-        "http://localhost:5181", 
-        "http://localhost:5182", 
-        "http://localhost:5183", 
-        "http://localhost:5184",
-        "http://localhost:5185",
-        "http://127.0.0.1:5185",
-        "http://127.0.0.1:65325",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 logger.info(f"CORS configured with direct header injection for primary domain")
