@@ -312,8 +312,43 @@ def analyze(request: AnalyzeRequest):
     # Initialize DataFrame if available in the request
     df = None
     if request.dataframe:
-        df = pd.DataFrame(request.dataframe)
-        logger.info(f"Using DataFrame from request with {len(df)} rows for intent classification")
+        try:
+            # Check if we received a valid dataframe structure
+            if isinstance(request.dataframe, list):
+                # Handle list of records format
+                df = pd.DataFrame(request.dataframe)
+            elif isinstance(request.dataframe, dict):
+                # Handle dict format with validation to ensure all columns have same length
+                # First check if all arrays are the same length
+                lengths = {k: len(v) for k, v in request.dataframe.items() if isinstance(v, list)}
+                if lengths and len(set(lengths.values())) > 1:
+                    # Different lengths, need to normalize
+                    logger.warning(f"Received inconsistent column lengths: {lengths}")
+                    max_len = max(lengths.values())
+                    normalized_data = {}
+                    for k, v in request.dataframe.items():
+                        if isinstance(v, list):
+                            # Pad shorter arrays with None
+                            normalized_data[k] = v + [None] * (max_len - len(v))
+                        else:
+                            normalized_data[k] = v
+                    df = pd.DataFrame(normalized_data)
+                else:
+                    # All good, create DataFrame normally
+                    df = pd.DataFrame(request.dataframe)
+            else:
+                # Unknown format, create empty DataFrame
+                logger.warning(f"Received dataframe in unknown format: {type(request.dataframe)}")
+                df = pd.DataFrame()
+            
+            logger.info(f"Successfully created DataFrame with {len(df)} rows and {len(df.columns)} columns for intent classification")
+        except Exception as e:
+            logger.error(f"Error creating DataFrame from request: {str(e)}")
+            # Create empty DataFrame instead of failing
+            df = pd.DataFrame()
+            logger.info("Created empty DataFrame after error")
+            import traceback
+            logger.error(traceback.format_exc())
     # If no data in request but project_id is provided, try to get Salla data
     elif request.project_id:
         try:
