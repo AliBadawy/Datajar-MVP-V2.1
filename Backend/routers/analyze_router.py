@@ -308,11 +308,17 @@ def analyze(request: AnalyzeRequest):
                 intent="data_analysis"  # Using 'data_analysis' as the intent for PandasAI queries
             )
             
-            # Save assistant analysis response
+            # Extract just the message content if it's a JSON object
+            if isinstance(ai_response, dict) and 'message' in ai_response:
+                message_content = ai_response['message']
+            else:
+                message_content = str(ai_response)
+            
+            # Save assistant analysis response with just the message content
             save_message(
                 project_id=request.project_id,
                 role="assistant",
-                content=ai_response,
+                content=message_content,
                 intent="data_analysis"  # Using 'data_analysis' as the intent for PandasAI responses
             )
             
