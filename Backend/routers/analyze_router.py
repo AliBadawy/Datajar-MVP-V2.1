@@ -7,6 +7,10 @@ import logging
 import pandas as pd
 from typing import Dict, Any, Optional, List
 
+# Configure logging first
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Import PandasAI handler
 try:
     from handlers.pandasai_handler import analyze_with_pandasai
@@ -14,10 +18,6 @@ try:
 except ImportError:
     logger.warning("PandasAI not available. Install with 'pip install pandasai'")
     PANDASAI_AVAILABLE = False
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
