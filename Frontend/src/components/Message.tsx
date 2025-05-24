@@ -11,14 +11,28 @@ interface MessageProps {
 }
 
 const Message: React.FC<MessageProps> = ({ content, isUser, rawResponse }) => {
-  // Determine if this is a complex response that needs the ResponseRenderer
-  const isResponseObject = 
-    typeof content === 'object' && 
-    content !== null && 
-    (content.type === 'plot' || content.type === 'dataframe' || content.type === 'text' || content.type === 'error');
+  // Debug log to see what's coming into the Message component
+  console.log("Message props:", { content, isUser, rawResponsePreview: rawResponse ? "[Present]" : "[None]" });
+
+  // Determine if this is a complex response that needs special rendering
+  // Simplified logic to handle the different cases more explicitly
+  let responseData = null;
   
-  // If we have rawResponse from the API, use that directly
-  const responseData = rawResponse || (isResponseObject ? content : null);
+  if (rawResponse) {
+    // If rawResponse is provided directly, use it
+    console.log("Using rawResponse for rendering", typeof rawResponse);
+    responseData = rawResponse;
+  } else if (typeof content === 'object' && content !== null) {
+    // If content is an object with a type property, it might need special rendering
+    if (content.type === 'plot' || content.type === 'dataframe' || content.type === 'error') {
+      console.log("Using content object for rendering as", content.type);
+      responseData = content;
+    } else if (content.type === 'text') {
+      // For text type, use the ResponseRenderer only if we need to
+      console.log("Text type detected");
+      responseData = content;
+    }
+  }
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2`}>
