@@ -10,6 +10,8 @@ from typing import Dict, Any, Optional, List
 import pandas as pd
 import os
 from dotenv import load_dotenv
+from pandasai.llm import OpenAI
+from pandasai import SmartDataframe
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
