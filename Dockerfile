@@ -55,14 +55,21 @@ RUN set -ex \
 # Final stage
 FROM python:3.9-slim
 
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    PORT=8000
+
 # Set working directory
 WORKDIR /app
 
-# Install runtime dependencies in a single layer
+# Install system dependencies
 RUN set -ex \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
         libgomp1 \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy wheels from builder
@@ -83,30 +90,29 @@ RUN set -ex \
     && rm -rf /root/.cache/pip \
     && pip list
 
-# Copy application code
+# Copy requirements file
+COPY Backend/requirements.txt .
+
+# Install Python dependencies
+RUN set -ex \
+    && pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir uvicorn[standard] \
+    && pip check \
+    && rm -rf /root/.cache/pip
+
+# Copy the rest of the application code
 COPY Backend/ .
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app \
-    PORT=8000
-
-# Expose the port the app runs on
-EXPOSE $PORT
+# Set the working directory to the Backend directory
+WORKDIR /app/Backend
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:$PORT/health || exit 1
 
-# Set the working directory to the Backend directory
-WORKDIR /app/Backend
-
-# Default port if not specified
-ENV PORT=8000
-
-# Command to run the application using uvicorn with auto-reload in development
+# Command to run the application using uvicorn
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT} --proxy-headers"]
 
 # List final directory contents for debugging
-RUN echo "Final contents of /app:" && ls -la /app
+RUN echo "Final contents of /app/Backend:" && ls -la
