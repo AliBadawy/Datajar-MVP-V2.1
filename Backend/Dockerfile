@@ -35,6 +35,9 @@ COPY --from=builder /wheels /wheels
 # Install dependencies from pre-built wheels
 RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* \
     && rm -rf /wheels
+    
+# Explicitly install PandasAI and its dependencies to ensure they're properly installed
+RUN pip install --no-cache-dir pandasai==2.0.44 openai==1.13.3 matplotlib==3.8.2 pandas==1.5.3
 
 # Copy application code
 # Railway is already starting in the Backend directory

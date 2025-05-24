@@ -19,6 +19,9 @@ RUN echo "Contents of /app:" && ls -la /app
 # Install dependencies 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
+    
+# Explicitly install PandasAI and its dependencies to ensure they're properly installed
+RUN pip install --no-cache-dir pandasai==2.0.44 openai==1.13.3 matplotlib==3.8.2 pandas==1.5.3
 
 # Copy the entire Backend directory to the app directory
 COPY Backend/ /app/
