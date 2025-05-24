@@ -68,30 +68,16 @@ WORKDIR /app
 RUN set -ex \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
+        build-essential \
         libgomp1 \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy wheels from builder
-COPY --from=builder /wheels /wheels
-
-# Install from wheels with dependency resolution
-RUN set -ex \
-    && pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir fastapi uvicorn[standard] \
-    && for wheel in /wheels/*.whl; do \
-        if [[ "$wheel" != *"httpx-"* ]] || [[ "$wheel" == *"httpx-0.28.1"* ]]; then \
-            pip install --no-cache-dir --no-index --find-links=/wheels "$wheel" || true; \
-        fi; \
-    done \
-    && pip install --no-cache-dir -r requirements.txt \
-    && pip check \
-    && rm -rf /wheels \
-    && rm -rf /root/.cache/pip \
-    && pip list
-
 # Copy requirements file
 COPY Backend/requirements.txt .
+
+# Verify requirements.txt exists and show its contents
+RUN echo "Contents of requirements.txt:" && cat requirements.txt
 
 # Install Python dependencies
 RUN set -ex \
@@ -99,7 +85,8 @@ RUN set -ex \
     && pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir uvicorn[standard] \
     && pip check \
-    && rm -rf /root/.cache/pip
+    && rm -rf /root/.cache/pip \
+    && pip list
 
 # Copy the rest of the application code
 COPY Backend/ .
