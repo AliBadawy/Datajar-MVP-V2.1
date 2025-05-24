@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from models.schemas import AnalyzeRequest
 from supabase_helpers.message import save_message
 from supabase_helpers.salla_order import get_salla_orders_for_project
+from supabase_helpers.project import get_project_by_id
 import logging
 import pandas as pd
 
