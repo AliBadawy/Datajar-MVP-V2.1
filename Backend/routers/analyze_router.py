@@ -5,6 +5,15 @@ from supabase_helpers.salla_order import get_salla_orders_for_project
 from supabase_helpers.project import get_project_by_id
 import logging
 import pandas as pd
+from typing import Dict, Any, Optional, List
+
+# Import PandasAI handler
+try:
+    from handlers.pandasai_handler import analyze_with_pandasai
+    PANDASAI_AVAILABLE = True
+except ImportError:
+    logger.warning("PandasAI not available. Install with 'pip install pandasai'")
+    PANDASAI_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -190,44 +199,76 @@ def classify(request: AnalyzeRequest):
 @router.post("/api/analyze")
 def analyze(request: AnalyzeRequest):
     """
-    Simple echo endpoint that returns the user message and saves to Supabase.
-    Retrieves Salla data for informational purposes but doesn't process it.
+    Endpoint to analyze user queries using PandasAI with Salla orders data
     
     Args:
-        request (AnalyzeRequest): Object containing messages and context
+        request: AnalyzeRequest containing messages, project_id, and other context
         
     Returns:
-        dict: Echo of the user's message
+        dict: Analysis response and available Salla data
     """
-    # Extract the last message from request
-    if not request.messages or len(request.messages) == 0:
-        raise HTTPException(status_code=400, detail="No messages provided")
+    # Log the request
+    logger.info(f"Received analyze request: {request}")
     
-    # Get the last message
-    last_message = request.messages[-1]
-    user_message = last_message["content"]
+    # Extract the user message from the request
+    user_message = request.messages[-1].content if request.messages else ""
+    logger.info(f"User message: {user_message}")
     
-    # Log information about the request
-    logger.info(f"Received message: '{user_message[:50]}...'")
+    # Initialize response
+    ai_response = f"I received your message: {user_message}"
+    analysis_result = None
     
-    # Check if Salla data is available for this project (informational only)
+    # Get Salla data if a project_id is provided
     salla_data = None
     if request.project_id:
         try:
-            # Try to get Salla data
+            # Try to get Salla orders for the project
             salla_data = get_salla_orders_for_project(request.project_id)
-            
             if salla_data is not None and not salla_data.empty:
-                logger.info(f"Found Salla data for project {request.project_id}: {len(salla_data)} orders")
+                logger.info(f"Found {len(salla_data)} Salla orders for project {request.project_id}")
+                
+                # Process the user query with PandasAI if available
+                if PANDASAI_AVAILABLE and user_message:
+                    try:
+                        logger.info(f"Processing query with PandasAI: {user_message}")
+                        
+                        # Get previous messages for context (limit to last 5)
+                        previous_messages = []
+                        if len(request.messages) > 1:
+                            for msg in request.messages[:-1][-5:]:
+                                previous_messages.append({
+                                    "role": "user" if msg.role == "user" else "assistant",
+                                    "content": msg.content
+                                })
+                        
+                        # Run analysis with PandasAI
+                        analysis_result = analyze_with_pandasai(
+                            df=salla_data, 
+                            query=user_message,
+                            conversation_context=previous_messages
+                        )
+                        
+                        # Update response with PandasAI analysis result
+                        if analysis_result and "response" in analysis_result:
+                            ai_response = analysis_result["response"]
+                            logger.info(f"PandasAI analysis successful")
+                        else:
+                            logger.warning("PandasAI returned empty or invalid response")
+                            
+                    except Exception as ai_error:
+                        logger.error(f"Error during PandasAI analysis: {str(ai_error)}")
+                        ai_response = f"I encountered an error while analyzing your data: {str(ai_error)}"
+                else:
+                    if not PANDASAI_AVAILABLE:
+                        logger.warning("PandasAI not available for analysis")
+                        ai_response = "I can't perform data analysis right now because PandasAI is not available. Please contact the administrator."
             else:
-                logger.info(f"No Salla data found for project {request.project_id}")
-                salla_data = None
+                logger.info(f"No Salla orders found for project {request.project_id}")
+                ai_response = "I couldn't find any Salla orders data for this project. Please make sure you have imported your Salla data."
         except Exception as e:
-            logger.error(f"Error getting Salla data: {str(e)}")
+            logger.error(f"Error retrieving Salla data: {str(e)}")
+            ai_response = f"I encountered an error while retrieving your Salla data: {str(e)}"
             salla_data = None
-    
-    # Create echo response
-    echo_response = f"Echo: {user_message}"
     
     # Save messages to Supabase if project_id is provided
     if request.project_id:
@@ -237,30 +278,35 @@ def analyze(request: AnalyzeRequest):
                 project_id=request.project_id,
                 role="user",
                 content=user_message,
-                intent="chat"  # Using 'chat' as the default intent
+                intent="analysis"  # Using 'analysis' as the intent for PandasAI queries
             )
             
-            # Save assistant echo response
+            # Save assistant analysis response
             save_message(
                 project_id=request.project_id,
                 role="assistant",
-                content=echo_response,
-                intent="chat"  # Using 'chat' as the default intent
+                content=ai_response,
+                intent="analysis"  # Using 'analysis' as the intent for PandasAI responses
             )
             
             logger.info(f"Saved messages for project {request.project_id}")
         except Exception as e:
             logger.error(f"Error saving messages: {str(e)}")
     
-    # Prepare response with echo message and Salla data
+    # Prepare response with analysis message and Salla data
     response = {
-        "message": echo_response,
-        "salla_data": None
+        "message": ai_response,
+        "salla_data": None,
+        "analysis": None
     }
     
     # Add Salla data if available
     if salla_data is not None and not salla_data.empty:
         # Convert DataFrame to list of dictionaries for JSON serialization
         response["salla_data"] = salla_data.to_dict(orient='records')
+    
+    # Add analysis results if available
+    if analysis_result:
+        response["analysis"] = analysis_result
     
     return response
