@@ -305,7 +305,7 @@ def analyze(request: AnalyzeRequest):
                 project_id=request.project_id,
                 role="user",
                 content=user_message,
-                intent="analysis"  # Using 'analysis' as the intent for PandasAI queries
+                intent="data_analysis"  # Using 'data_analysis' as the intent for PandasAI queries
             )
             
             # Save assistant analysis response
@@ -313,7 +313,7 @@ def analyze(request: AnalyzeRequest):
                 project_id=request.project_id,
                 role="assistant",
                 content=ai_response,
-                intent="analysis"  # Using 'analysis' as the intent for PandasAI responses
+                intent="data_analysis"  # Using 'data_analysis' as the intent for PandasAI responses
             )
             
             logger.info(f"Saved messages for project {request.project_id}")
