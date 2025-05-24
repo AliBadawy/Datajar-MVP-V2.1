@@ -211,7 +211,20 @@ def analyze(request: AnalyzeRequest):
     logger.info(f"Received analyze request: {request}")
     
     # Extract the user message from the request
-    user_message = request.messages[-1].content if request.messages else ""
+    user_message = ""
+    if request.messages:
+        last_message = request.messages[-1]
+        # Handle both object-style messages and dictionary messages
+        if isinstance(last_message, dict):
+            user_message = last_message.get("content", "")
+        else:
+            # Try attribute access if it's not a dict
+            try:
+                user_message = last_message.content
+            except AttributeError:
+                logger.warning(f"Unexpected message format: {type(last_message)}")
+                # Fallback to string representation
+                user_message = str(last_message)
     logger.info(f"User message: {user_message}")
     
     # Initialize response
@@ -236,9 +249,23 @@ def analyze(request: AnalyzeRequest):
                         previous_messages = []
                         if len(request.messages) > 1:
                             for msg in request.messages[:-1][-5:]:
+                                # Handle both object-style and dictionary messages
+                                if isinstance(msg, dict):
+                                    role = msg.get("role", "user")
+                                    content = msg.get("content", "")
+                                else:
+                                    # Try attribute access for object-style messages
+                                    try:
+                                        role = "user" if getattr(msg, "role", "") == "user" else "assistant"
+                                        content = getattr(msg, "content", "")
+                                    except AttributeError:
+                                        logger.warning(f"Unexpected message format: {type(msg)}")
+                                        role = "user"  # default
+                                        content = str(msg)  # fallback
+                                
                                 previous_messages.append({
-                                    "role": "user" if msg.role == "user" else "assistant",
-                                    "content": msg.content
+                                    "role": role,
+                                    "content": content
                                 })
                         
                         # Run analysis with PandasAI
