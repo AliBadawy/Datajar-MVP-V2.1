@@ -70,13 +70,14 @@ COPY --from=builder /wheels /wheels
 
 # Install from wheels with dependency resolution
 RUN set -ex \
+    && pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir fastapi uvicorn[standard] \
     && for wheel in /wheels/*.whl; do \
         if [[ "$wheel" != *"httpx-"* ]] || [[ "$wheel" == *"httpx-0.28.1"* ]]; then \
             pip install --no-cache-dir --no-index --find-links=/wheels "$wheel" || true; \
         fi; \
     done \
-    # Explicitly install uvicorn and other required packages
-    && pip install --no-cache-dir uvicorn[standard] \
+    && pip install --no-cache-dir -r requirements.txt \
     && pip check \
     && rm -rf /wheels \
     && rm -rf /root/.cache/pip \
@@ -105,7 +106,7 @@ WORKDIR /app/Backend
 ENV PORT=8000
 
 # Command to run the application using uvicorn with auto-reload in development
-CMD exec uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT} --proxy-headers"]
 
 # List final directory contents for debugging
 RUN echo "Final contents of /app:" && ls -la /app
