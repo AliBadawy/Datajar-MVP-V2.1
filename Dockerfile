@@ -79,15 +79,31 @@ COPY Backend/requirements.txt .
 # Verify requirements.txt exists and show its contents
 RUN echo "Contents of requirements.txt:" && cat requirements.txt
 
+# Install system dependencies first
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install Python dependencies
 RUN set -ex \
     && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir uvicorn[standard] \
-    && pip install --no-cache-dir pandasai==2.0.44 openai==1.13.3 pandas==1.5.3 matplotlib==3.8.2 \
+    && pip install --no-cache-dir \
+        pandasai==2.0.44 \
+        openai==1.13.3 \
+        pandas==1.5.3 \
+        matplotlib==3.8.2 \
+        scikit-learn>=1.2.0 \
+        scipy>=1.10.0 \
+        numpy>=1.24.0 \
+        python-dotenv==1.0.0 \
     && pip check \
     && rm -rf /root/.cache/pip \
-    && echo "Installed packages:" && pip list
+    && echo "Installed packages:" \
+    && pip list
 
 # Copy the rest of the application code
 COPY Backend/ .

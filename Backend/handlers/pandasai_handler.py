@@ -28,7 +28,7 @@ os.environ["PYTHONHTTPSVERIFY"] = "0"
 try:
     # Try importing from newer versions
     try:
-        logger.info("Attempting to import PandasAI...")
+        logger.info("Attempting to import PandasAI (new version)...")
         from pandasai import PandasAI
         from pandasai.llm import OpenAI
         import pandas as pd  # Ensure pandas is imported
@@ -41,23 +41,28 @@ try:
         PANDASAI_AVAILABLE = True
         PANDASAI_VERSION = "new"
         logger.info("Successfully imported PandasAI (new version)")
+        
     except ImportError as e:
-        logger.warning(f"Failed to import new version of PandasAI: {e}")
-        raise
-        logger.info("Using newer version of PandasAI")
-    except ImportError:
+        logger.warning(f"Failed to import new version of PandasAI, trying old version: {e}")
+        
         # Try importing from older versions
         try:
+            logger.info("Attempting to import PandasAI (old version)...")
             from pandasai.pandas_ai import PandasAI
             from pandasai.llm.openai import OpenAI
+            import pandas as pd
+            import matplotlib
+            
             PANDASAI_AVAILABLE = True
             PANDASAI_VERSION = "old"
-            logger.info("Using older version of PandasAI")
-        except ImportError:
-            logger.warning("PandasAI not installed or import failed")
+            logger.info("Successfully imported PandasAI (old version)")
+            
+        except ImportError as e2:
+            logger.error(f"Failed to import any version of PandasAI: {e2}")
             PANDASAI_AVAILABLE = False
+            
 except Exception as e:
-    logger.error(f"Error importing PandasAI: {str(e)}")
+    logger.error(f"Unexpected error importing PandasAI: {str(e)}", exc_info=True)
     PANDASAI_AVAILABLE = False
 
 # Initialize OpenAI API key
