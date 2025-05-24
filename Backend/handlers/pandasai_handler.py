@@ -22,13 +22,28 @@ load_dotenv()
 PANDASAI_AVAILABLE = False
 PANDASAI_VERSION = None
 
+# Set environment variable to prevent SSL warnings
+os.environ["PYTHONHTTPSVERIFY"] = "0"
+
 try:
     # Try importing from newer versions
     try:
+        logger.info("Attempting to import PandasAI...")
         from pandasai import PandasAI
         from pandasai.llm import OpenAI
+        import pandas as pd  # Ensure pandas is imported
+        import matplotlib  # Ensure matplotlib is imported
+        
+        # Verify the imports worked
+        assert pd is not None
+        assert matplotlib is not None
+        
         PANDASAI_AVAILABLE = True
         PANDASAI_VERSION = "new"
+        logger.info("Successfully imported PandasAI (new version)")
+    except ImportError as e:
+        logger.warning(f"Failed to import new version of PandasAI: {e}")
+        raise
         logger.info("Using newer version of PandasAI")
     except ImportError:
         # Try importing from older versions

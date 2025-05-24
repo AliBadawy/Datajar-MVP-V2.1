@@ -84,9 +84,10 @@ RUN set -ex \
     && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir uvicorn[standard] \
+    && pip install --no-cache-dir pandasai==2.0.44 openai==1.13.3 pandas==1.5.3 matplotlib==3.8.2 \
     && pip check \
     && rm -rf /root/.cache/pip \
-    && pip list
+    && echo "Installed packages:" && pip list
 
 # Copy the rest of the application code
 COPY Backend/ .
