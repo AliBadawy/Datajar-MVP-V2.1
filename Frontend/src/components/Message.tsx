@@ -12,7 +12,7 @@ const Message: React.FC<MessageProps> = ({ content, isUser, rawResponse }) => {
   console.log("Message props:", { content, isUser, rawResponse });
 
   // Check if we have Salla data in the raw response
-  const hasSallaData = rawResponse && rawResponse.salla_data && rawResponse.salla_data.length > 0;
+  const hasSallaData = rawResponse  > 0;
   const messageText = typeof content === 'object' && content.message ? content.message : content;
   
   return (
