@@ -186,17 +186,20 @@ const ChatInterface: React.FC = () => {
       // Debug log the response data
       console.log("RAW API RESPONSE:", analyzeResponse.data);
       
-      // The backend now returns plain text directly
-      // Just use the response data as is
-      const responseContent = analyzeResponse.data;
+      // Now the backend returns a structured response with message and salla_data
+      console.log("Received response data:", analyzeResponse.data);
       
-      // Ultra simple approach - just add the text response directly
+      // Extract the message from the response or use the full response if not structured
+      const responseContent = analyzeResponse.data.message || analyzeResponse.data;
+      
+      // Add the AI response with the raw data for Salla information
       console.log("Adding message with content:", responseContent);
       
-      // Add the AI response - no typing animation for simplicity
       addMessage({ 
         content: responseContent,
-        isUser: false
+        isUser: false,
+        // Pass the raw response to allow display of Salla data
+        rawResponse: analyzeResponse.data
       });
     } catch (error) {
       // Handle errors

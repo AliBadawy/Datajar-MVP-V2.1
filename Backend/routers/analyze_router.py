@@ -252,7 +252,15 @@ def analyze(request: AnalyzeRequest):
         except Exception as e:
             logger.error(f"Error saving messages: {str(e)}")
     
-    # Simple response - just return the echo text directly
-    response = echo_response
+    # Prepare response with echo message and Salla data
+    response = {
+        "message": echo_response,
+        "salla_data": None
+    }
+    
+    # Add Salla data if available
+    if salla_data is not None and not salla_data.empty:
+        # Convert DataFrame to list of dictionaries for JSON serialization
+        response["salla_data"] = salla_data.to_dict(orient='records')
     
     return response
