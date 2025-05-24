@@ -75,6 +75,8 @@ RUN set -ex \
             pip install --no-cache-dir --no-index --find-links=/wheels "$wheel" || true; \
         fi; \
     done \
+    # Explicitly install uvicorn and other required packages
+    && pip install --no-cache-dir uvicorn[standard] \
     && pip check \
     && rm -rf /wheels \
     && rm -rf /root/.cache/pip \
@@ -95,6 +97,9 @@ EXPOSE $PORT
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:$PORT/health || exit 1
+
+# Set the working directory to the Backend directory
+WORKDIR /app/Backend
 
 # Command to run the application using uvicorn with auto-reload in development
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT}", "--proxy-headers"]
