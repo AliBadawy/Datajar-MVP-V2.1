@@ -49,6 +49,7 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:5174",
+    "https://datajar-mvp-v21-production.up.railway.app"  # Add Railway domain for direct access
     "http://localhost:5175",
     "http://localhost:5176",
     "http://localhost:5177",
@@ -102,10 +103,16 @@ class CustomCORSMiddleware(BaseHTTPMiddleware):
         logger.info(f"Added CORS headers to {request.method} response")
         return response
 
-# Add our custom CORS middleware first - this will take precedence
-app.add_middleware(CustomCORSMiddleware)
-
-# Also add the standard CORS middleware as a backup
+# Add CORS middleware with explicit configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+    expose_headers=["*"],  # Expose all headers
+    max_age=600,  # Cache preflight requests for 10 minutes
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,

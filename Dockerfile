@@ -101,8 +101,11 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 # Set the working directory to the Backend directory
 WORKDIR /app/Backend
 
+# Default port if not specified
+ENV PORT=8000
+
 # Command to run the application using uvicorn with auto-reload in development
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT}", "--proxy-headers"]
+CMD exec uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers
 
 # List final directory contents for debugging
 RUN echo "Final contents of /app:" && ls -la /app
