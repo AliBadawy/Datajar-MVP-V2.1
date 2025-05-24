@@ -1,27 +1,49 @@
-# Direct build for Railway with explicit paths
-FROM python:3.9-slim
+# Multi-stage build for Railway
+FROM python:3.9-slim AS builder
 
-# Set working directory
-WORKDIR /app
+# Set environment variables for optimal build performance
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install required system dependencies
+# Install system dependencies required for building wheels
+WORKDIR /build
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     gcc \
+    g++ \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements directly from the Backend directory in the repo
-COPY Backend/requirements.txt /app/
+# Copy requirements first to leverage Docker caching
+COPY Backend/requirements.txt .
 
-# List current directory contents for debugging
-RUN echo "Contents of /app:" && ls -la /app
+# Use binary wheels where possible - critical for pandas/scipy
+ENV PIP_ONLY_BINARY=numpy,pandas,scipy,matplotlib
 
-# Install dependencies 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Build wheels for all dependencies
+RUN pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
+
+# Explicitly build wheels for PandasAI and its dependencies
+RUN pip wheel --no-cache-dir --wheel-dir=/wheels pandasai==2.0.44 openai==1.13.3 matplotlib==3.8.2 pandas==1.5.3
+
+# Start a clean image for the final application
+FROM python:3.9-slim
+
+# Copy wheels from builder stage
+WORKDIR /app
+COPY --from=builder /wheels /wheels
+
+# Install dependencies from pre-built wheels
+RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* \
+    && rm -rf /wheels
     
-# Explicitly install PandasAI and its dependencies to ensure they're properly installed
-RUN pip install --no-cache-dir pandasai==2.0.44 openai==1.13.3 matplotlib==3.8.2 pandas==1.5.3
+# List installed packages for debugging
+RUN pip list
+
+# Explicitly verify PandasAI and OpenAI are installed
+RUN pip show pandasai && pip show openai
 
 # Copy the entire Backend directory to the app directory
 COPY Backend/ /app/
@@ -33,4 +55,4 @@ RUN echo "Final contents of /app:" && ls -la /app
 EXPOSE 8000
 
 # Run the application (shell form to allow environment variable expansion)
-CMD uvicorn main:app --host 0.0.0.0 --port $PORT
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
