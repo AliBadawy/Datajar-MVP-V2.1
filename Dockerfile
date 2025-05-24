@@ -26,11 +26,31 @@ COPY Backend/requirements.txt .
 # Create directory for wheels
 RUN mkdir /wheels
 
-# Build wheels for all dependencies in one layer
+# First, install only the requirements to check for conflicts
 RUN set -ex \
     && pip install --upgrade pip \
+    && pip install -r requirements.txt --no-cache-dir || (pip check && false)
+
+# Now build wheels with pinned versions to avoid conflicts
+RUN set -ex \
     && pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt \
-    && pip wheel --no-cache-dir --wheel-dir=/wheels pandasai==2.0.44 openai==1.13.3 matplotlib==3.8.2 pandas==1.5.3 httpx==0.28.1
+    && pip wheel --wheel-dir=/wheels --no-deps \
+        pandasai==2.0.44 \
+        openai==1.13.3 \
+        matplotlib==3.8.2 \
+        pandas==1.5.3 \
+        httpx==0.28.1 \
+        numpy>=1.24.0 \
+        scipy>=1.10.0 \
+        scikit-learn>=1.2.0 \
+        python-multipart>=0.0.5 \
+        python-jose[cryptography]>=3.3.0 \
+        passlib[bcrypt]>=1.7.4 \
+        pydantic>=1.10.2 \
+        sqlalchemy>=1.4.0 \
+        psycopg2-binary>=2.9.3 \
+        alembic>=1.7.3 \
+        python-dotenv>=0.19.0
 
 # Final stage
 FROM python:3.9-slim
@@ -48,11 +68,17 @@ RUN set -ex \
 # Copy wheels from builder
 COPY --from=builder /wheels /wheels
 
-# Install from wheels and clean up in one layer
+# Install from wheels with dependency resolution
 RUN set -ex \
-    && pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* \
+    && for wheel in /wheels/*.whl; do \
+        if [[ "$wheel" != *"httpx-"* ]] || [[ "$wheel" == *"httpx-0.28.1"* ]]; then \
+            pip install --no-cache-dir --no-index --find-links=/wheels "$wheel" || true; \
+        fi; \
+    done \
+    && pip check \
     && rm -rf /wheels \
-    && rm -rf /root/.cache/pip
+    && rm -rf /root/.cache/pip \
+    && pip list
 
 # Copy application code
 COPY Backend/ .
