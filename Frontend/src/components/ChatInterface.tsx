@@ -186,65 +186,18 @@ const ChatInterface: React.FC = () => {
       // Debug log the response data
       console.log("RAW API RESPONSE:", analyzeResponse.data);
       
-      // Handle different response types (legacy format and new format)
-      const responseType = analyzeResponse.data.type;
+      // The backend now returns plain text directly
+      // Just use the response data as is
+      const responseContent = analyzeResponse.data;
       
-      // We'll use the raw response data directly when adding the message
+      // Ultra simple approach - just add the text response directly
+      console.log("Adding message with content:", responseContent);
       
-      // Prepare the content for the message display
-      let responseContent;
-      
-      console.log("Processing response type:", responseType);
-      
-      if (responseType === 'text') {
-        // For text responses, use the response text directly
-        // This simplifies handling by bypassing conversion
-        const textContent = analyzeResponse.data.response || analyzeResponse.data.value || "No text content";
-        console.log("Text content extracted:", textContent);
-        responseContent = textContent;
-      } else if (responseType === 'plot' || responseType === 'dataframe' || responseType === 'error') {
-        // Complex data - pass through the object
-        responseContent = analyzeResponse.data;
-        console.log("Using complex object response");
-      } else if (responseType === 'chat') {
-        // Legacy chat format
-        responseContent = analyzeResponse.data.response;
-        console.log("Using legacy chat response");
-      } else if (responseType === 'data_analysis') {
-        // Legacy data analysis format
-        responseContent = analyzeResponse.data.narrative;
-        console.log("Using legacy data_analysis response");
-      } else {
-        // Unknown format - just pass the raw data
-        responseContent = JSON.stringify(analyzeResponse.data, null, 2);
-        console.log("Using stringified unknown response");
-      }
-      
-      // Add the AI response with typing animation
-      // IMPORTANT: For text responses from the echo service, extract directly from raw response
-      if (responseType === 'text' && analyzeResponse.data.response) {
-        // Use the echo response text directly
-        const echoText = analyzeResponse.data.response;
-        console.log("Adding echo text message:", echoText);
-        
-        // Force immediate render of the message without typing animation
-        addMessage({ 
-          content: echoText,
-          isUser: false,
-          // No typing animation for echo messages to ensure immediate display
-          rawResponse: null // Don't use raw response for echo messages to keep it simple
-        });
-      } else {
-        // For all other response types, pass both content and raw response
-        console.log("Adding complex message with raw response");
-        addMessage({ 
-          content: responseContent,
-          isUser: false, 
-          isTyping: true,
-          type: responseType,
-          rawResponse: analyzeResponse.data
-        });
-      }
+      // Add the AI response - no typing animation for simplicity
+      addMessage({ 
+        content: responseContent,
+        isUser: false
+      });
     } catch (error) {
       // Handle errors
       console.error('Error sending message to backend:', error);

@@ -252,18 +252,7 @@ def analyze(request: AnalyzeRequest):
         except Exception as e:
             logger.error(f"Error saving messages: {str(e)}")
     
-    # Prepare the response
-    response = {
-        "type": "text",
-        "response": echo_response,
-    }
-    
-    # Add metadata about the data used for analysis (if available)
-    if salla_data is not None and not salla_data.empty:
-        response["data_meta"] = {
-            "rows": len(salla_data),
-            "columns": len(salla_data.columns),
-            "column_names": list(salla_data.columns)
-        }
+    # Simple response - just return the echo text directly
+    response = echo_response
     
     return response
