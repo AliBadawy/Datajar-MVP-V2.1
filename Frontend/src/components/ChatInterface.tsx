@@ -221,16 +221,21 @@ const ChatInterface: React.FC = () => {
       }
       
       // Add the AI response with typing animation
-      // For text responses, we'll use the string directly
-      if (typeof responseContent === 'string') {
-        console.log("Adding plain text message:", responseContent);
+      // IMPORTANT: For text responses from the echo service, extract directly from raw response
+      if (responseType === 'text' && analyzeResponse.data.response) {
+        // Use the echo response text directly
+        const echoText = analyzeResponse.data.response;
+        console.log("Adding echo text message:", echoText);
+        
+        // Force immediate render of the message without typing animation
         addMessage({ 
-          content: responseContent,
-          isUser: false, 
-          isTyping: true
+          content: echoText,
+          isUser: false,
+          // No typing animation for echo messages to ensure immediate display
+          rawResponse: null // Don't use raw response for echo messages to keep it simple
         });
       } else {
-        // For complex responses, pass both content and raw response
+        // For all other response types, pass both content and raw response
         console.log("Adding complex message with raw response");
         addMessage({ 
           content: responseContent,

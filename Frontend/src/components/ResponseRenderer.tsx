@@ -20,6 +20,17 @@ interface ResponseRendererProps {
 }
 
 export default function ResponseRenderer({ response }: ResponseRendererProps) {
+  console.log('ResponseRenderer received:', response);
+
+  // Handle direct string content (used for simple echo responses)
+  if (typeof response === 'string') {
+    return (
+      <div className="prose max-w-none">
+        <ReactMarkdown>{response}</ReactMarkdown>
+      </div>
+    );
+  }
+
   // Handle plot responses (new format)
   if (response.type === "plot" && response.plot_config) {
     return (
@@ -57,9 +68,10 @@ export default function ResponseRenderer({ response }: ResponseRendererProps) {
 
   // Handle text responses
   if (response.type === "text") {
+    const textContent = response.response || response.value || JSON.stringify(response);
     return (
       <div className="prose max-w-none">
-        <ReactMarkdown>{response.response || response.value}</ReactMarkdown>
+        <ReactMarkdown>{textContent}</ReactMarkdown>
       </div>
     );
   }
