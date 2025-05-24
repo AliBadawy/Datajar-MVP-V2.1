@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from models.schemas import AnalyzeRequest
 from supabase_helpers.message import save_message
 from supabase_helpers.salla_order import get_salla_orders_for_project
-from handlers.pandasai_basic_handler import analyze_salla_orders_math_only
 import logging
 import pandas as pd
 
@@ -267,13 +266,14 @@ def classify(request: AnalyzeRequest):
 @router.post("/api/analyze")
 def analyze(request: AnalyzeRequest):
     """
-    Simple endpoint that processes all messages through PandasAI when Salla data is available.
+    Simple echo endpoint that returns the user message and saves to Supabase.
+    Retrieves Salla data for informational purposes but doesn't process it.
     
     Args:
         request (AnalyzeRequest): Object containing messages and context
         
     Returns:
-        dict: Analysis result from PandasAI
+        dict: Echo of the user's message
     """
     # Extract the last message from request
     if not request.messages or len(request.messages) == 0:
@@ -286,7 +286,7 @@ def analyze(request: AnalyzeRequest):
     # Log information about the request
     logger.info(f"Received message: '{user_message[:50]}...'")
     
-    # Check if Salla data is available for this project
+    # Check if Salla data is available for this project (informational only)
     salla_data = None
     if request.project_id:
         try:
@@ -302,16 +302,8 @@ def analyze(request: AnalyzeRequest):
             logger.error(f"Error getting Salla data: {str(e)}")
             salla_data = None
     
-    # Process the message with PandasAI if Salla data is available
-    analysis_result = None
-    if salla_data is not None and not salla_data.empty:
-        try:
-            # Process the message through PandasAI
-            analysis_result = analyze_salla_orders_math_only(salla_data, user_message)
-            logger.info(f"PandasAI result: {analysis_result}")
-        except Exception as e:
-            logger.error(f"Error processing with PandasAI: {str(e)}")
-            analysis_result = {"type": "error", "value": str(e)}
+    # Create echo response
+    echo_response = f"Echo: {user_message}"
     
     # Save messages to Supabase if project_id is provided
     if request.project_id:
@@ -324,12 +316,11 @@ def analyze(request: AnalyzeRequest):
                 intent="chat"  # Using 'chat' as the default intent
             )
             
-            # Save assistant response
-            response_content = str(analysis_result.get("value", "No result available")) if analysis_result else "No data available for analysis."
+            # Save assistant echo response
             save_message(
                 project_id=request.project_id,
                 role="assistant",
-                content=response_content,
+                content=echo_response,
                 intent="chat"  # Using 'chat' as the default intent
             )
             
@@ -338,20 +329,12 @@ def analyze(request: AnalyzeRequest):
             logger.error(f"Error saving messages: {str(e)}")
     
     # Prepare the response
-    if analysis_result:
-        # Create response object with analysis result
-        response = {
-            "type": analysis_result.get("type", "text"),
-            "value": analysis_result.get("value", "No result available"),
-        }
-    else:
-        # No data available response
-        response = {
-            "type": "error",
-            "value": "No data available for analysis."
-        }
+    response = {
+        "type": "text",
+        "response": echo_response,
+    }
     
-    # Add metadata about the data used for analysis
+    # Add metadata about the data used for analysis (if available)
     if salla_data is not None and not salla_data.empty:
         response["data_meta"] = {
             "rows": len(salla_data),
