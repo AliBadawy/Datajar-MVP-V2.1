@@ -11,16 +11,29 @@ const TypingMessage: React.FC<TypingMessageProps> = ({ content, isUser, onTyping
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showCursor, setShowCursor] = useState(true);
 
-  // Handle the typing animation
+  // Handle the typing animation - much faster now
   useEffect(() => {
+    // For very long messages (>100 chars), just show instantly
+    if (content.length > 100 && currentIndex === 0) {
+      setDisplayText(content);
+      setCurrentIndex(content.length);
+      if (onTypingComplete) {
+        onTypingComplete();
+      }
+      return;
+    }
+    
     if (currentIndex < content.length) {
-      // Randomize typing speed slightly for a more realistic effect
-      const typingSpeed = Math.floor(Math.random() * 30) + 30; // 30-60ms per character
+      // Super fast typing - 1ms per character with chunk processing
+      // Process 10 characters at once for extra speed
+      const chunkSize = 10;
+      const endIndex = Math.min(currentIndex + chunkSize, content.length);
+      const chunk = content.substring(currentIndex, endIndex);
       
       const typingTimer = setTimeout(() => {
-        setDisplayText(prev => prev + content[currentIndex]);
-        setCurrentIndex(prev => prev + 1);
-      }, typingSpeed);
+        setDisplayText(prev => prev + chunk);
+        setCurrentIndex(endIndex);
+      }, 1); // Almost instant typing
       
       return () => clearTimeout(typingTimer);
     } else if (currentIndex === content.length && onTypingComplete) {
