@@ -22,11 +22,14 @@ COPY Backend/requirements.txt .
 # Use binary wheels where possible - critical for pandas/scipy
 ENV PIP_ONLY_BINARY=numpy,pandas,scipy,matplotlib
 
-# Build wheels for all dependencies
-RUN pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
+# Build wheels for all dependencies in requirements.txt except httpx
+# This avoids conflicts between httpx versions
+RUN grep -v "httpx" requirements.txt > requirements_no_httpx.txt
+RUN pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements_no_httpx.txt
 
 # Explicitly build wheels for PandasAI and its dependencies
-RUN pip wheel --no-cache-dir --wheel-dir=/wheels pandasai==2.0.44 openai==1.13.3 matplotlib==3.8.2 pandas==1.5.3
+# Use httpx 0.28.1 which is required by PandasAI 2.0.44
+RUN pip wheel --no-cache-dir --wheel-dir=/wheels pandasai==2.0.44 openai==1.13.3 matplotlib==3.8.2 pandas==1.5.3 httpx==0.28.1
 
 # Start a clean image for the final application
 FROM python:3.9-slim
