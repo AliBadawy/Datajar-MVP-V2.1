@@ -187,9 +187,22 @@ const ChatInterface: React.FC = () => {
       const responseType = analyzeResponse.data.type;
       let responseContent;
       
-      if (responseType === 'plot' || responseType === 'dataframe' || responseType === 'text' || responseType === 'error') {
-        // New format - direct pass through to the renderer
+      if (responseType === 'plot' || responseType === 'dataframe' || responseType === 'error') {
+        // Format with complex data structure - direct pass through
         responseContent = analyzeResponse.data;
+      } else if (responseType === 'text') {
+        // Text format - handle both value and response fields
+        // Our echo service uses 'response' field but the renderer expects 'value'
+        if (analyzeResponse.data.response !== undefined) {
+          // Create a new object with the value field
+          responseContent = {
+            type: 'text',
+            value: analyzeResponse.data.response
+          };
+        } else {
+          // If value is present, use the original response
+          responseContent = analyzeResponse.data;
+        }
       } else if (responseType === 'chat') {
         // Legacy chat format
         responseContent = analyzeResponse.data.response;
