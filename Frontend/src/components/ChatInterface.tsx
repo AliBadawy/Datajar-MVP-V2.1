@@ -189,17 +189,17 @@ const ChatInterface: React.FC = () => {
       // Now the backend returns a structured response with message and salla_data
       console.log("Received response data:", analyzeResponse.data);
       
-      // Extract the message from the response or use the full response if not structured
-      const responseContent = analyzeResponse.data.message || analyzeResponse.data;
+      // Extract just the message content from the response
+      const responseMessage = typeof analyzeResponse.data === 'object' && analyzeResponse.data !== null
+        ? analyzeResponse.data.message || JSON.stringify(analyzeResponse.data)
+        : String(analyzeResponse.data);
       
-      // Add the AI response with the raw data for Salla information
-      console.log("Adding message with content:", responseContent);
+      console.log("Adding message with content:", responseMessage);
       
+      // Only pass the message content, not the entire response
       addMessage({ 
-        content: responseContent,
-        isUser: false,
-        // Pass the raw response to allow display of Salla data
-        rawResponse: analyzeResponse.data
+        content: responseMessage,
+        isUser: false
       });
     } catch (error) {
       // Handle errors
