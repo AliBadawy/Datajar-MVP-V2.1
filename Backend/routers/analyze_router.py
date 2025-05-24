@@ -327,13 +327,5 @@ def analyze(request: AnalyzeRequest):
         "analysis": None
     }
     
-    # Add Salla data if available
-    if salla_data is not None and not salla_data.empty:
-        # Convert DataFrame to list of dictionaries for JSON serialization
-        response["salla_data"] = salla_data.to_dict(orient='records')
-    
-    # Add analysis results if available
-    if analysis_result:
-        response["analysis"] = analysis_result
-    
+
     return response
