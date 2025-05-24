@@ -178,20 +178,20 @@ const ChatInterface: React.FC = () => {
       });
       
       // Handle response based on type
-      console.log("Response data:", analyzeResponse.data);
+      console.log("Response data:", analyzeResponse.data.message);
       
       // After getting response, simulate typing animation
       setIsThinking(false);
       
       // Debug log the response data
-      console.log("RAW API RESPONSE:", analyzeResponse.data);
+      console.log("RAW API RESPONSE:", analyzeResponse.data.message);
       
       // Now the backend returns a structured response with message and salla_data
       console.log("Received response data:", analyzeResponse.data);
       
       // Extract just the message content from the response
       const responseMessage = typeof analyzeResponse.data === 'object' && analyzeResponse.data !== null
-        ? analyzeResponse.data.message || JSON.stringify(analyzeResponse.data)
+        ? analyzeResponse.data.message || JSON.stringify(analyzeResponse.data.message)
         : String(analyzeResponse.data);
       
       console.log("Adding message with content:", responseMessage);
