@@ -71,37 +71,39 @@ def analyze_project_data(project_id: int):
         if has_salla_data:
             data_sources.append("Salla")
         
-        # If no data source was found, use placeholder
+        # If no data source was found, return a clear message
         if not data_sources:
-            data_sources = ["Placeholder Data"]
-            logger.info("No data sources found, using placeholder data")
+            logger.warning(f"No data sources found for project {project_id}")
             
-            # Create static placeholder data
-            column_details = {
-                "order_id": { "type": "string", "missing": 0 },
-                "customer_name": { "type": "string", "missing": 3 },
-                "amount": { "type": "numeric", "missing": 0 },
-                "date": { "type": "datetime", "missing": 0 },
-                "status": { "type": "string", "missing": 0 },
-            }
+            # Try to list available project IDs with data for debugging
+            try:
+                from supabase_helpers.salla_order import get_projects_with_salla_orders
+                projects_with_orders = get_projects_with_salla_orders() or []
+                if projects_with_orders:
+                    logger.info(f"Projects with Salla orders: {projects_with_orders}")
+                else:
+                    logger.info("No projects with Salla orders found")
+            except Exception as e:
+                logger.error(f"Error checking projects with orders: {str(e)}")
             
-            # Create a response object with placeholder data
+            # Create a response indicating no data was found
             response_data = {
-                "status": "success",
+                "status": "no_data",
                 "project_id": project_id,
                 "summary": {
-                    "sources": data_sources,
-                    "total_rows": 120
+                    "sources": [],
+                    "total_rows": 0
                 },
+                "message": f"No data found for project {project_id}. Please import data or use the copy-orders-to endpoint.",
                 "metadata": {
-                    "analyzed_at": "2025-05-17T12:00:00Z",
-                    "data_sources": data_sources,
+                    "analyzed_at": None,
+                    "data_sources": [],
                     "basic_stats": {
-                        "total_records": 120,
-                        "columns_analyzed": 5,
-                        "missing_data_percentage": 2.5,
+                        "total_records": 0,
+                        "columns_analyzed": 0,
+                        "missing_data_percentage": 0,
                     },
-                    "column_details": column_details
+                    "column_details": {}
                 }
             }
         else:

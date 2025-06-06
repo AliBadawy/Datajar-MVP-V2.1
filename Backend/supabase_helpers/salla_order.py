@@ -313,6 +313,36 @@ def get_salla_orders_for_project(project_id: int) -> Optional[pd.DataFrame]:
         logger.error(f"❌ Error retrieving Salla orders from Supabase: {str(e)}")
         return None
 
+def get_projects_with_salla_orders() -> List[int]:
+    """
+    Get a list of project IDs that have Salla orders in the database
+    
+    Returns:
+        List[int]: List of project IDs with Salla orders
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Query Supabase for all distinct project_ids in the salla_orders table
+        response = supabase.table("salla_orders").select("project_id").execute()
+        
+        if response.data:
+            # Extract unique project IDs
+            project_ids = set()
+            for item in response.data:
+                if 'project_id' in item and item['project_id'] is not None:
+                    project_ids.add(int(item['project_id']))
+                    
+            # Convert to sorted list for consistent output
+            return sorted(list(project_ids))
+        else:
+            logger.info("No Salla orders found in the database")
+            return []
+    except Exception as e:
+        logger.error(f"Error retrieving projects with Salla orders: {str(e)}")
+        return []
+
 def delete_salla_orders_for_project(project_id: int) -> Dict[str, Any]:
     """
     Delete all Salla orders for a specific project
