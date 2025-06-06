@@ -24,13 +24,15 @@ export default function ProjectSetupWizard() {
   const [industry, setIndustry] = useState('');
   const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
   const [isGoogleAnalyticsDialogOpen, setIsGoogleAnalyticsDialogOpen] = useState(false);
+  const [gaTrackingId, setGaTrackingId] = useState('');
+  const [gaConnected, setGaConnected] = useState(false);
 
   // Project ID and analysis state tracking
   const [projectId, setProjectId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [analysisData, setAnalysisData] = useState<any>(null); // Store raw response data
+  const [analysisData, setAnalysisData] = useState<any>(null);
   
   // Analysis progress tracking
   type AnalysisStep = {
@@ -56,40 +58,37 @@ export default function ProjectSetupWizard() {
     const params = new URLSearchParams(location.search);
     const stepParam = params.get('step');
     
-    // Try to load saved form data if exists
     const savedFormData = localStorage.getItem('project_form_data');
     if (savedFormData) {
       try {
         const formData = JSON.parse(savedFormData);
         console.log('Loading project data from localStorage:', formData);
         
-        // Restore form fields
         if (formData.projectName) setProjectName(formData.projectName);
         if (formData.persona) setPersona(formData.persona);
         if (formData.context) setContext(formData.context);
         if (formData.industry) setIndustry(formData.industry);
+        if (formData.gaTrackingId) {
+          setGaTrackingId(formData.gaTrackingId);
+          setGaConnected(true);
+        }
         
-        // ✨ CRITICAL: Restore project ID
         if (formData.projectId || formData.id) {
           const id = formData.projectId || formData.id;
           console.log(`🔄 Restoring project ID from localStorage: ${id}`);
           setProjectId(id);
         }
-        
-        // Don't remove the data yet as we might need it if user refreshes
       } catch (error) {
         console.error('Error parsing saved form data:', error);
       }
     }
     
-    // Handle step restoration
     if (stepParam) {
       const stepNumber = parseInt(stepParam, 10);
       if (!isNaN(stepNumber) && stepNumber >= 0 && stepNumber < steps.length) {
         setStep(stepNumber);
       }
     } else {
-      // Check if we have a stored step in localStorage
       const storedStep = localStorage.getItem('project_setup_step');
       if (storedStep) {
         const stepNumber = parseInt(storedStep, 10);
@@ -101,24 +100,21 @@ export default function ProjectSetupWizard() {
     }
   }, [location]);
 
-  // Steps array
   const steps = [
     "Name Your Project",
     "Select Persona",
     "Add Context",
     "Choose Industry",
     "Import Your Data",
-    "Processing Data" // New Step
+    "Processing Data"
   ];
 
   const handleNext = async () => {
-    // Create project after industry selection (step 3) before moving to data import
     if (step === 3) {
       setIsSubmitting(true);
       setSubmitError(null);
       
       try {
-        // Create project and store its ID
         const id = await createProject({
           name: projectName,
           persona,
@@ -126,23 +122,21 @@ export default function ProjectSetupWizard() {
           industry
         });
         
-        // Store the project ID for use in subsequent steps
         setProjectId(id);
         console.log('Project created with ID:', id);
         
-        // Save project ID to localStorage to ensure it persists
         const formData = {
           projectId: id,
           projectName,
           persona,
           context,
           industry,
+          gaTrackingId,
           lastStep: step
         };
         console.log('Saving project data to localStorage:', formData);
         localStorage.setItem('project_form_data', JSON.stringify(formData));
         
-        // Move to the next step
         setStep(step + 1);
       } catch (error) {
         console.error('Error creating project:', error);
@@ -151,13 +145,11 @@ export default function ProjectSetupWizard() {
             ? error.message 
             : 'Failed to create the project. Please try again.'
         );
-        // Don't advance to the next step if project creation failed
         return;
       } finally {
         setIsSubmitting(false);
       }
     } else if (step < steps.length - 1) {
-      // For other steps, just move forward
       setStep(step + 1);
     }
   };
@@ -168,18 +160,52 @@ export default function ProjectSetupWizard() {
     }
   };
 
-  // Analysis trigger function  // Function to trigger analysis via backend API
+  const handleConnectGA = () => {
+    if (!gaTrackingId.match(/^UA-\d{4,10}-\d{1,4}$/) && !gaTrackingId.match(/^G-[A-Z0-9]{10}$/)) {
+      setSubmitError('Please enter a valid Google Analytics tracking ID (UA-XXXXXX-X or G-XXXXXXXXXX)');
+      return;
+    }
+
+    setGaConnected(true);
+    setSubmitError(null);
+
+    // Save GA tracking ID with other project data
+    const formData = {
+      projectId,
+      projectName,
+      persona,
+      context,
+      industry,
+      gaTrackingId,
+      lastStep: step
+    };
+    localStorage.setItem('project_form_data', JSON.stringify(formData));
+  };
+
+  const handleDisconnectGA = () => {
+    setGaConnected(false);
+    setGaTrackingId('');
+    
+    // Update stored form data without GA tracking ID
+    const formData = {
+      projectId,
+      projectName,
+      persona,
+      context,
+      industry,
+      lastStep: step
+    };
+    localStorage.setItem('project_form_data', JSON.stringify(formData));
+  };
+
   const triggerProjectAnalysis = async () => {
-    // Reset all states
     setIsAnalyzing(true);
     setAnalysisError(null);
     setAnalysisData(null);
     
-    // Reset all steps to waiting
     setAnalysisSteps(steps => steps.map(step => ({ ...step, status: 'waiting' as const })));
 
     try {
-      // Step 1: Initialize analysis
       console.log("⏳ Starting analysis for project ID:", projectId);
       updateAnalysisStep('initialize', 'in-progress');
       
@@ -187,27 +213,21 @@ export default function ProjectSetupWizard() {
         throw new Error("Project ID is missing. Cannot analyze without a project ID.");
       }
       
-      // Short delay to show step 1 progress
       await new Promise(resolve => setTimeout(resolve, 800));
       updateAnalysisStep('initialize', 'complete');
       
-      // Step 2: Analyze data
       updateAnalysisStep('analyze', 'in-progress');
       
-      // Artificially delay to simulate analysis time (only for better UX)
       await new Promise(resolve => setTimeout(resolve, 1500)); 
       
-      // Make the actual API call
       const result = await analyzeProject(projectId);
       updateAnalysisStep('analyze', 'complete');
       console.log("✅ Analysis completed successfully:", result);
       
-      // Step 3: Save results (this actually happens on the backend, but we show progress in UI)
       updateAnalysisStep('save', 'in-progress');
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Artificial delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       updateAnalysisStep('save', 'complete');
       
-      // Store the response data and mark as complete
       setAnalysisData(result);
       setAnalysisComplete(true);
     } catch (err: any) {
@@ -218,7 +238,6 @@ export default function ProjectSetupWizard() {
         error: err 
       });
       
-      // Mark current step as error
       const currentStep = analysisSteps.find(step => step.status === 'in-progress')?.name || 'analyze';
       updateAnalysisStep(currentStep, 'error');
       
@@ -228,12 +247,10 @@ export default function ProjectSetupWizard() {
     }
   };
   
-  // Log project ID state for debugging
   useEffect(() => {
     console.log(`🔍 Current step: ${step}, Project ID: ${projectId}, Analysis complete: ${analysisComplete}`);
   }, [step, projectId, analysisComplete]);
   
-  // Add effect to trigger analysis on step 5
   useEffect(() => {
     if (step === 5 && projectId && !analysisComplete && !isAnalyzing) {
       console.log(`🚀 Auto-triggering analysis for project ${projectId} on step ${step}`);
@@ -241,29 +258,23 @@ export default function ProjectSetupWizard() {
     }
   }, [step, projectId, analysisComplete, isAnalyzing]);
 
-
   const handleFinish = async () => {
     setIsSubmitting(true);
     setSubmitError(null);
     
     try {
-      // In step 4, start analysis when clicking Next
       if (step === 4) {
         console.log("🔄 Moving to analysis step with projectId:", projectId);
-        // Project is already created, just move to the analysis step
         setStep(step + 1);
       } else if (step === 5) {
-        // For the final step, store project ID in localStorage and redirect to chat
         console.log("✅ Setup complete! Navigating to chat with projectId:", projectId);
         
         if (!projectId) {
           throw new Error("Missing project ID. Cannot complete setup.");
         }
         
-        // Store the project ID for the chat page
         localStorage.setItem('lastProjectId', projectId as string);
         
-        // Navigate to the chat page with project ID
         navigate(`/chat?project=${projectId}`);
       }
     } catch (error) {
@@ -278,7 +289,6 @@ export default function ProjectSetupWizard() {
     }
   };
 
-  // Disable next button if current step's field is empty
   const isNextDisabled = () => {
     switch (step) {
       case 0:
@@ -290,13 +300,12 @@ export default function ProjectSetupWizard() {
       case 3:
         return !industry;
       default:
-        return false; // File upload is optional
+        return false;
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-lg border border-gray-200 shadow-sm p-8">
-      {/* Progress Indicator */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           {steps.map((_, index) => (
@@ -320,14 +329,12 @@ export default function ProjectSetupWizard() {
         <p className="text-gray-500 mt-1 text-sm">Step {step + 1} of {steps.length}</p>
       </div>
 
-      {/* Error message */}
       {submitError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
           <p>{submitError}</p>
         </div>
       )}
 
-      {/* Step Content */}
       <div className="mb-6">
         {step === 0 && (
           <div>
@@ -403,7 +410,7 @@ export default function ProjectSetupWizard() {
               <h3 className="text-lg font-semibold text-gray-800 mb-3">Connect E-commerce Store</h3>
               <p className="text-sm text-gray-600 mb-4">Connect your Salla store to analyze your e-commerce data</p>
               <SallaDialog 
-                projectId={projectId || ''} // Pass the projectId to SallaDialog
+                projectId={projectId || ''} 
                 projectName={projectName}
                 persona={persona}
                 context={context}
@@ -412,7 +419,6 @@ export default function ProjectSetupWizard() {
             </div>
             
             <div className="mb-6 border-t border-gray-200 pt-6">
-              {/* Collapsible Analytics Tools Section */}
               <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                 <button 
                   onClick={() => setAnalyticsExpanded(!analyticsExpanded)}
@@ -435,7 +441,10 @@ export default function ProjectSetupWizard() {
                     <p className="text-sm text-black mb-4">Connect your analytics platforms to gain deeper insights</p>
                     
                     <div className="flex flex-col space-y-3">
+<<<<<<< HEAD
                       {/* Google Analytics Integration */}
+=======
+>>>>>>> d7fe6a0a567998a0cdc18da8765c4a10b517f6d0
                       <div className="border border-gray-200 rounded-md p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
@@ -451,12 +460,42 @@ export default function ProjectSetupWizard() {
                             </div>
                           </div>
                           <div className="flex items-center">
+<<<<<<< HEAD
                             <button 
                               onClick={() => setIsGoogleAnalyticsDialogOpen(true)}
                               className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"
                             >
                               Connect
                             </button>
+=======
+                            {!gaConnected ? (
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="text"
+                                  placeholder="Enter GA Tracking ID"
+                                  value={gaTrackingId}
+                                  onChange={(e) => setGaTrackingId(e.target.value)}
+                                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <button
+                                  onClick={handleConnectGA}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                                >
+                                  Connect
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm text-green-600 font-medium">Connected</span>
+                                <button
+                                  onClick={handleDisconnectGA}
+                                  className="px-3 py-1 bg-red-100 text-red-600 rounded-md text-sm font-medium hover:bg-red-200 transition-colors"
+                                >
+                                  Disconnect
+                                </button>
+                              </div>
+                            )}
+>>>>>>> d7fe6a0a567998a0cdc18da8765c4a10b517f6d0
                           </div>
                         </div>
                       </div>
@@ -480,7 +519,6 @@ export default function ProjectSetupWizard() {
                 <p className="text-sm text-gray-500 mt-2 mb-1">Drag and drop a CSV file here, or click to select</p>
                 <p className="text-xs text-gray-400">Max file size: 5MB</p>
                 
-                {/* Disabled file input */}
                 <input 
                   type="file" 
                   className="hidden" 
@@ -499,11 +537,9 @@ export default function ProjectSetupWizard() {
               <>
                 <h2 className="text-lg font-medium mb-4">Analyzing your data...</h2>
                 
-                {/* Analysis steps progress indicators */}
                 <div className="w-full max-w-md mx-auto space-y-3 mb-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
                   {analysisSteps.map((step) => (
                     <div key={step.name} className="flex items-start">
-                      {/* Step status icon */}
                       <div className="mt-0.5 mr-3">
                         {step.status === 'waiting' && (
                           <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
@@ -525,7 +561,6 @@ export default function ProjectSetupWizard() {
                         )}
                       </div>
                       
-                      {/* Step description */}
                       <div className="flex-1">
                         <p className={`font-medium ${step.status === 'error' ? 'text-red-600' : step.status === 'in-progress' ? 'text-blue-600' : step.status === 'complete' ? 'text-green-600' : 'text-gray-600'}`}>
                           {step.description}
@@ -560,7 +595,6 @@ export default function ProjectSetupWizard() {
                     Your data has been successfully analyzed and is ready for exploration.
                   </p>
 
-                  {/* Animated checkmarks for all completed steps */}
                   <div className="w-full max-w-md mx-auto space-y-2 mb-4">
                     {analysisSteps.map((step, index) => (
                       <div key={step.name} className="flex items-center animate-fadeIn" style={{animationDelay: `${index * 150}ms`}}>
@@ -604,7 +638,6 @@ export default function ProjectSetupWizard() {
         )}
       </div>
 
-      {/* Navigation Buttons */}
       <div className="flex justify-between mt-8">
         {step > 0 ? (
           <button 
