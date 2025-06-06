@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../lib/store';
 import { analyzeProject } from '../../lib/api';
 import SallaDialog from './salla-dialog';
+import GoogleAnalyticsDialog from './google-analytics-dialog';
 
 export default function ProjectSetupWizard() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export default function ProjectSetupWizard() {
   const [context, setContext] = useState('');
   const [industry, setIndustry] = useState('');
   const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
+  const [isGoogleAnalyticsDialogOpen, setIsGoogleAnalyticsDialogOpen] = useState(false);
 
   // Project ID and analysis state tracking
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -433,7 +435,7 @@ export default function ProjectSetupWizard() {
                     <p className="text-sm text-black mb-4">Connect your analytics platforms to gain deeper insights</p>
                     
                     <div className="flex flex-col space-y-3">
-                      {/* Google Analytics Integration - Coming Soon */}
+                      {/* Google Analytics Integration */}
                       <div className="border border-gray-200 rounded-md p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
@@ -449,12 +451,9 @@ export default function ProjectSetupWizard() {
                             </div>
                           </div>
                           <div className="flex items-center">
-                            <span className="mr-3 px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                              Coming Soon
-                            </span>
                             <button 
-                              className="px-3 py-1 rounded-md bg-gray-200 text-gray-500 text-sm font-medium cursor-not-allowed opacity-60"
-                              disabled
+                              onClick={() => setIsGoogleAnalyticsDialogOpen(true)}
+                              className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"
                             >
                               Connect
                             </button>
@@ -649,6 +648,17 @@ export default function ProjectSetupWizard() {
           </button>
         )}
       </div>
+      
+      {/* Google Analytics Dialog */}
+      <GoogleAnalyticsDialog
+        projectId={projectId || ''}
+        onSuccess={() => {
+          console.log('Google Analytics connected successfully');
+          // You can add additional logic here if needed
+        }}
+        onClose={() => setIsGoogleAnalyticsDialogOpen(false)}
+        isOpen={isGoogleAnalyticsDialogOpen}
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { SetupProjectPage } from './pages/setup-project-page';
 import SallaCallback from './components/auth/SallaCallback';
 import SignupPage from './pages/signup-page';
 import LoginPage from './pages/login-page';
+import ToastContainer from './components/ui/ToastContainer';
 import { useAppStore } from './lib/store';
 
 const App = () => {
@@ -61,6 +62,7 @@ const App = () => {
       </Routes>
         </main>
       </div>
+      <ToastContainer />
     </Router>
   );
 };
