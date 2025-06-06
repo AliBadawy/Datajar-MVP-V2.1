@@ -23,8 +23,6 @@ export default function ProjectSetupWizard() {
   const [context, setContext] = useState('');
   const [industry, setIndustry] = useState('');
   const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
-  const [gaTrackingId, setGaTrackingId] = useState('');
-  const [gaConnected, setGaConnected] = useState(false);
 
   // Project ID and analysis state tracking
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -67,10 +65,7 @@ export default function ProjectSetupWizard() {
         if (formData.persona) setPersona(formData.persona);
         if (formData.context) setContext(formData.context);
         if (formData.industry) setIndustry(formData.industry);
-        if (formData.gaTrackingId) {
-          setGaTrackingId(formData.gaTrackingId);
-          setGaConnected(true);
-        }
+        // Google Analytics integration will be implemented in future updates
         
         if (formData.projectId || formData.id) {
           const id = formData.projectId || formData.id;
@@ -130,7 +125,6 @@ export default function ProjectSetupWizard() {
           persona,
           context,
           industry,
-          gaTrackingId,
           lastStep: step
         };
         console.log('Saving project data to localStorage:', formData);
@@ -157,44 +151,6 @@ export default function ProjectSetupWizard() {
     if (step > 0) {
       setStep(step - 1);
     }
-  };
-
-  const handleConnectGA = () => {
-    if (!gaTrackingId.match(/^UA-\d{4,10}-\d{1,4}$/) && !gaTrackingId.match(/^G-[A-Z0-9]{10}$/)) {
-      setSubmitError('Please enter a valid Google Analytics tracking ID (UA-XXXXXX-X or G-XXXXXXXXXX)');
-      return;
-    }
-
-    setGaConnected(true);
-    setSubmitError(null);
-
-    // Save GA tracking ID with other project data
-    const formData = {
-      projectId,
-      projectName,
-      persona,
-      context,
-      industry,
-      gaTrackingId,
-      lastStep: step
-    };
-    localStorage.setItem('project_form_data', JSON.stringify(formData));
-  };
-
-  const handleDisconnectGA = () => {
-    setGaConnected(false);
-    setGaTrackingId('');
-    
-    // Update stored form data without GA tracking ID
-    const formData = {
-      projectId,
-      projectName,
-      persona,
-      context,
-      industry,
-      lastStep: step
-    };
-    localStorage.setItem('project_form_data', JSON.stringify(formData));
   };
 
   const triggerProjectAnalysis = async () => {
@@ -439,49 +395,60 @@ export default function ProjectSetupWizard() {
                   <div className="mt-3 pl-1 pr-1 pb-2 animate-fadeIn">
                     <p className="text-sm text-black mb-4">Connect your analytics platforms to gain deeper insights</p>
                     
-                    <div className="flex flex-col space-y-3">
-                      <div className="border border-gray-200 rounded-md p-4">
+                    <div className="space-y-4">
+                      {/* Google Analytics Card */}
+                      <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 flex items-center justify-center rounded-md bg-blue-50">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M7 10.9V2.1c0-.6.4-1.1 1-1.1s1 .5 1 1.1v8.8c0 .6-.4 1.1-1 1.1s-1-.5-1-1.1zm4.5 1.5v-9c0-.8.7-1.5 1.5-1.5s1.5.7 1.5 1.5v9c0 .8-.7 1.5-1.5 1.5s-1.5-.7-1.5-1.5zm5-1.5V2.1c0-.6.4-1.1 1-1.1s1 .5 1 1.1v8.8c0 .6-.4 1.1-1 1.1s-1-.5-1-1.1z"/>
-                                <path d="M19.1 20.1c-1 1-2.3 1.7-3.8 1.9-1.4.2-2.9 0-4.2-.7-1.2-.7-2.2-1.7-2.8-2.9-.6-1.3-.8-2.7-.6-4.2.2-1.4.9-2.7 1.9-3.8.5-.5 1.4-.5 1.9 0s.5 1.4 0 1.9c-.6.6-1 1.4-1.2 2.3-.1.9 0 1.8.4 2.6.4.8 1 1.4 1.8 1.8.8.4 1.7.5 2.6.4.9-.1 1.7-.6 2.3-1.2.5-.5 1.4-.5 1.9 0s.5 1.5-.2 1.9z"/>
-                              </svg>
-                            </div>
-                            <div className="ml-3">
-                              <h4 className="text-sm font-medium text-gray-900">Google Analytics</h4>
-                              <p className="text-xs text-gray-500">Track user behavior and website performance</p>
+                            <BarChart3 className="h-6 w-6 mr-3 text-gray-400" />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium text-gray-600">Connect Google Analytics</h3>
+                                <span className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">Coming Soon</span>
+                              </div>
+                              <p className="text-sm text-gray-400">Import website analytics data</p>
                             </div>
                           </div>
+                          <div className="w-10 h-6 rounded-full bg-gray-300 flex items-center p-1">
+                            <div className="w-4 h-4 rounded-full bg-white"></div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* BigQuery Card */}
+                      <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            {!gaConnected ? (
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="text"
-                                  placeholder="Enter GA Tracking ID"
-                                  value={gaTrackingId}
-                                  onChange={(e) => setGaTrackingId(e.target.value)}
-                                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <button
-                                  onClick={handleConnectGA}
-                                  className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-                                >
-                                  Connect
-                                </button>
+                            <Database className="h-6 w-6 mr-3 text-gray-400" />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium text-gray-600">Connect BigQuery</h3>
+                                <span className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">Coming Soon</span>
                               </div>
-                            ) : (
-                              <div className="flex items-center space-x-2">
-                                <span className="text-sm text-green-600 font-medium">Connected</span>
-                                <button
-                                  onClick={handleDisconnectGA}
-                                  className="px-3 py-1 bg-red-100 text-red-600 rounded-md text-sm font-medium hover:bg-red-200 transition-colors"
-                                >
-                                  Disconnect
-                                </button>
+                              <p className="text-sm text-gray-400">Import structured data from your BigQuery tables</p>
+                            </div>
+                          </div>
+                          <div className="w-10 h-6 rounded-full bg-gray-300 flex items-center p-1">
+                            <div className="w-4 h-4 rounded-full bg-white"></div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Facebook Business Card */}
+                      <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Facebook className="h-6 w-6 mr-3 text-[#1877F2]" />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium text-gray-600">Connect Facebook Business</h3>
+                                <span className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">Coming Soon</span>
                               </div>
-                            )}
+                              <p className="text-sm text-gray-400">Import ads and page insights from Facebook</p>
+                            </div>
+                          </div>
+                          <div className="w-10 h-6 rounded-full bg-gray-300 flex items-center p-1">
+                            <div className="w-4 h-4 rounded-full bg-white"></div>
                           </div>
                         </div>
                       </div>
@@ -619,70 +586,6 @@ export default function ProjectSetupWizard() {
                   </div>
                 )}
                 
-                {/* Coming Soon Integrations Section */}
-                <div className="mt-8">
-                  <h3 className="font-semibold text-xl text-gray-800 mb-4 text-left">Coming Soon</h3>
-                  <p className="text-sm text-gray-600 mb-6 text-left">These integrations will be available in future updates.</p>
-                  
-                  <div className="space-y-4">
-                    {/* Google Analytics Card */}
-                    <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <BarChart3 className="h-6 w-6 mr-3 text-gray-400" />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium text-gray-600">Connect Google Analytics</h3>
-                              <span className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">Coming Soon</span>
-                            </div>
-                            <p className="text-sm text-gray-400">Import website analytics data</p>
-                          </div>
-                        </div>
-                        <div className="w-10 h-6 rounded-full bg-gray-300 flex items-center p-1">
-                          <div className="w-4 h-4 rounded-full bg-white"></div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* BigQuery Card */}
-                    <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Database className="h-6 w-6 mr-3 text-gray-400" />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium text-gray-600">Connect BigQuery</h3>
-                              <span className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">Coming Soon</span>
-                            </div>
-                            <p className="text-sm text-gray-400">Import structured data from your BigQuery tables</p>
-                          </div>
-                        </div>
-                        <div className="w-10 h-6 rounded-full bg-gray-300 flex items-center p-1">
-                          <div className="w-4 h-4 rounded-full bg-white"></div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Facebook Business Card */}
-                    <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Facebook className="h-6 w-6 mr-3 text-[#1877F2]" />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium text-gray-600">Connect Facebook Business</h3>
-                              <span className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">Coming Soon</span>
-                            </div>
-                            <p className="text-sm text-gray-400">Import ads and page insights from Facebook</p>
-                          </div>
-                        </div>
-                        <div className="w-10 h-6 rounded-full bg-gray-300 flex items-center p-1">
-                          <div className="w-4 h-4 rounded-full bg-white"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </>
             )}
           </div>
