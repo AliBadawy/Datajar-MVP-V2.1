@@ -441,10 +441,6 @@ export default function ProjectSetupWizard() {
                     <p className="text-sm text-black mb-4">Connect your analytics platforms to gain deeper insights</p>
                     
                     <div className="flex flex-col space-y-3">
-<<<<<<< HEAD
-                      {/* Google Analytics Integration */}
-=======
->>>>>>> d7fe6a0a567998a0cdc18da8765c4a10b517f6d0
                       <div className="border border-gray-200 rounded-md p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
@@ -460,42 +456,12 @@ export default function ProjectSetupWizard() {
                             </div>
                           </div>
                           <div className="flex items-center">
-<<<<<<< HEAD
                             <button 
                               onClick={() => setIsGoogleAnalyticsDialogOpen(true)}
                               className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"
                             >
                               Connect
                             </button>
-=======
-                            {!gaConnected ? (
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="text"
-                                  placeholder="Enter GA Tracking ID"
-                                  value={gaTrackingId}
-                                  onChange={(e) => setGaTrackingId(e.target.value)}
-                                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <button
-                                  onClick={handleConnectGA}
-                                  className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-                                >
-                                  Connect
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center space-x-2">
-                                <span className="text-sm text-green-600 font-medium">Connected</span>
-                                <button
-                                  onClick={handleDisconnectGA}
-                                  className="px-3 py-1 bg-red-100 text-red-600 rounded-md text-sm font-medium hover:bg-red-200 transition-colors"
-                                >
-                                  Disconnect
-                                </button>
-                              </div>
-                            )}
->>>>>>> d7fe6a0a567998a0cdc18da8765c4a10b517f6d0
                           </div>
                         </div>
                       </div>
