@@ -253,26 +253,64 @@ def get_salla_orders_for_project(project_id: int) -> Optional[pd.DataFrame]:
     Returns:
         Optional[pd.DataFrame]: DataFrame of orders if available, None otherwise
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"📊 Retrieving Salla orders for project ID: {project_id}")
+    
     # First check if orders are in the memory store
     if project_id in salla_orders_session_store:
+        logger.info(f"Using cached orders from memory store for project ID: {project_id}")
         return salla_orders_session_store[project_id]
     
     # If not in memory, retrieve from Supabase
     try:
+        logger.info(f"Querying Supabase for Salla orders with project_id={project_id}")
+        
+        # Check if the salla_orders table exists
+        try:
+            # Just check if we can access the table at all
+            table_check = supabase.table("salla_orders").select("id").limit(1).execute()
+            logger.info(f"Salla orders table exists and contains {len(table_check.data) if table_check.data else 0} records in first row")
+        except Exception as table_e:
+            logger.error(f"⚠️ Error accessing salla_orders table: {str(table_e)}")
+            return None
+        
+        # Proceed with the actual query for this project's orders
         response = supabase.table("salla_orders").select("*").eq("project_id", project_id).execute()
         
-        if response.data:
+        logger.info(f"Query response contains {len(response.data) if response.data else 0} orders")
+        
+        if response.data and len(response.data) > 0:
             # Create DataFrame from Supabase response
             df = pd.DataFrame(response.data)
+            
+            # Log information about the DataFrame
+            logger.info(f"✅ Successfully retrieved {len(df)} Salla orders for project {project_id}")
+            logger.info(f"DataFrame columns: {df.columns.tolist()}")
+            logger.info(f"First few order IDs: {df['order_id'].head(5).tolist() if 'order_id' in df.columns else 'No order_id column'}")
             
             # Store in memory for faster access next time
             salla_orders_session_store[project_id] = df
             
             return df
         else:
+            logger.warning(f"⚠️ No Salla orders found for project {project_id} in database")
+            
+            # Try to list all project_ids that have orders to help debugging
+            try:
+                all_projects = supabase.table("salla_orders").select("project_id").execute()
+                if all_projects.data:
+                    unique_projects = set(item['project_id'] for item in all_projects.data if 'project_id' in item)
+                    logger.info(f"Projects with Salla orders: {unique_projects}")
+                else:
+                    logger.info("No Salla orders found in database for any project")
+            except Exception as list_e:
+                logger.error(f"Error listing projects with Salla orders: {str(list_e)}")
+            
             return None
     except Exception as e:
-        print(f"Error retrieving Salla orders from Supabase: {str(e)}")
+        logger.error(f"❌ Error retrieving Salla orders from Supabase: {str(e)}")
         return None
 
 def delete_salla_orders_for_project(project_id: int) -> Dict[str, Any]:
