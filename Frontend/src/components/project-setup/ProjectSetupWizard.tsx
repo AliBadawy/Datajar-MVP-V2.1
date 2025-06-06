@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../lib/store';
 import { analyzeProject } from '../../lib/api';
 import SallaDialog from './salla-dialog';
+import { BarChart3, Database, Facebook } from 'lucide-react';
 
 export default function ProjectSetupWizard() {
   const navigate = useNavigate();
@@ -617,6 +618,71 @@ export default function ProjectSetupWizard() {
                     </div>
                   </div>
                 )}
+                
+                {/* Coming Soon Integrations Section */}
+                <div className="mt-8">
+                  <h3 className="font-semibold text-xl text-gray-800 mb-4 text-left">Coming Soon</h3>
+                  <p className="text-sm text-gray-600 mb-6 text-left">These integrations will be available in future updates.</p>
+                  
+                  <div className="space-y-4">
+                    {/* Google Analytics Card */}
+                    <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <BarChart3 className="h-6 w-6 mr-3 text-gray-400" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-gray-600">Connect Google Analytics</h3>
+                              <span className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">Coming Soon</span>
+                            </div>
+                            <p className="text-sm text-gray-400">Import website analytics data</p>
+                          </div>
+                        </div>
+                        <div className="w-10 h-6 rounded-full bg-gray-300 flex items-center p-1">
+                          <div className="w-4 h-4 rounded-full bg-white"></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* BigQuery Card */}
+                    <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <Database className="h-6 w-6 mr-3 text-gray-400" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-gray-600">Connect BigQuery</h3>
+                              <span className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">Coming Soon</span>
+                            </div>
+                            <p className="text-sm text-gray-400">Import structured data from your BigQuery tables</p>
+                          </div>
+                        </div>
+                        <div className="w-10 h-6 rounded-full bg-gray-300 flex items-center p-1">
+                          <div className="w-4 h-4 rounded-full bg-white"></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Facebook Business Card */}
+                    <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <Facebook className="h-6 w-6 mr-3 text-[#1877F2]" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-gray-600">Connect Facebook Business</h3>
+                              <span className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">Coming Soon</span>
+                            </div>
+                            <p className="text-sm text-gray-400">Import ads and page insights from Facebook</p>
+                          </div>
+                        </div>
+                        <div className="w-10 h-6 rounded-full bg-gray-300 flex items-center p-1">
+                          <div className="w-4 h-4 rounded-full bg-white"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </>
             )}
           </div>
