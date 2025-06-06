@@ -3,7 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../lib/store';
 import { analyzeProject } from '../../lib/api';
 import SallaDialog from './salla-dialog';
+import GoogleAnalyticsDialog from './google-analytics-dialog';
 import { BarChart3, Database, Facebook } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function ProjectSetupWizard() {
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ export default function ProjectSetupWizard() {
   const [context, setContext] = useState('');
   const [industry, setIndustry] = useState('');
   const [analyticsExpanded, setAnalyticsExpanded] = useState(false);
+  const [isGADialogOpen, setIsGADialogOpen] = useState(false);
 
   // Project ID and analysis state tracking
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -397,23 +400,36 @@ export default function ProjectSetupWizard() {
                     
                     <div className="space-y-4">
                       {/* Google Analytics Card */}
-                      <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
+                      <div 
+                        className="border rounded-lg p-4 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => setIsGADialogOpen(true)}
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <BarChart3 className="h-6 w-6 mr-3 text-gray-400" />
+                            <BarChart3 className="h-6 w-6 mr-3 text-blue-600" />
                             <div>
                               <div className="flex items-center gap-2">
                                 <h3 className="font-medium text-gray-600">Connect Google Analytics</h3>
-                                <span className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">Coming Soon</span>
                               </div>
-                              <p className="text-sm text-gray-400">Import website analytics data</p>
+                              <p className="text-sm text-gray-400">Import website traffic and user behavior data</p>
                             </div>
                           </div>
-                          <div className="w-10 h-6 rounded-full bg-gray-300 flex items-center p-1">
+                          <div className="w-10 h-6 rounded-full bg-gray-200 flex items-center p-1">
                             <div className="w-4 h-4 rounded-full bg-white"></div>
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Google Analytics Dialog */}
+                      <GoogleAnalyticsDialog
+                        isOpen={isGADialogOpen}
+                        onClose={() => setIsGADialogOpen(false)}
+                        onConnect={(data) => {
+                          console.log('Google Analytics connection data:', data);
+                          toast.success('Successfully connected to Google Analytics');
+                          setIsGADialogOpen(false);
+                        }}
+                      />
                       
                       {/* BigQuery Card */}
                       <div className="border rounded-lg p-4 bg-gray-50 opacity-75 cursor-not-allowed">
