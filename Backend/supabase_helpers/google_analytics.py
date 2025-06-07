@@ -52,8 +52,19 @@ def save_google_analytics_data(project_id: int, data: Dict[str, Any], start_date
     }
     
     try:
+        # Debug: Print Supabase instance
+        print(f"Supabase client exists: {supabase is not None}")
+        print(f"Saving GA record: {json.dumps({k: str(v)[:100] + '...' if isinstance(v, str) and len(str(v)) > 100 else v for k, v in ga_record.items()})}")
+        
         # Store in Supabase
-        result = supabase.table('google_analytics_data').insert(ga_record).execute()
+        try:
+            result = supabase.table('google_analytics_data').insert(ga_record).execute()
+            print(f"Insert operation executed successfully")
+        except Exception as insert_error:
+            print(f"ERROR during Supabase insert: {str(insert_error)}")
+            import traceback
+            print(f"Full traceback: {traceback.format_exc()}")
+            return {"success": False, "error": str(insert_error), "message": "Failed during Supabase insert operation"}
         
         # Check for errors
         if hasattr(result, 'error') and result.error is not None:
@@ -61,10 +72,13 @@ def save_google_analytics_data(project_id: int, data: Dict[str, Any], start_date
             return {"success": False, "error": str(result.error)}
         
         count = len(result.data) if result.data else 0
+        print(f"Insert successful, {count} records created")
         return {"success": True, "count": count, "message": f"Successfully saved Google Analytics data"}
     
     except Exception as e:
         print(f"Exception saving Google Analytics data: {str(e)}")
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}")
         return {"success": False, "error": str(e), "message": "Failed to save Google Analytics data due to an exception"}
 
 def get_google_analytics_data_for_project(project_id: int) -> Optional[Dict[str, Any]]:
