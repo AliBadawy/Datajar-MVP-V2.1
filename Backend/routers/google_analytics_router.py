@@ -3,6 +3,7 @@ from models.schemas import GoogleAnalyticsRequest
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Metric
 from google.analytics.data_v1beta.types import Dimension
+from supabase_helpers.google_analytics import save_google_analytics_data
 
 import tempfile
 import json
@@ -43,6 +44,20 @@ def fetch_google_analytics_data(project_id: int, request: GoogleAnalyticsRequest
                 }
                 for row in response.rows
             ]
+        }
+        
+        # Save data to Supabase
+        storage_result = save_google_analytics_data(
+            project_id=project_id,
+            data=result,
+            start_date=request.start_date,
+            end_date=request.end_date
+        )
+        
+        # Add storage info to result
+        result["storage_info"] = {
+            "success": storage_result.get("success", False),
+            "message": storage_result.get("message", "Failed to save to database")
         }
 
         return result
