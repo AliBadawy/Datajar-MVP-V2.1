@@ -23,14 +23,14 @@ interface Metric {
 }
 
 const metrics: Metric[] = [
-  { value: 'active_users', label: 'Active Users' },
+  { value: 'activeUsers', label: 'Active Users' },
   { value: 'sessions', label: 'Sessions' },
-  { value: 'page_views', label: 'Page Views' },
-  { value: 'bounce_rate', label: 'Bounce Rate' },
-  { value: 'session_duration', label: 'Session Duration' },
-  { value: 'conversion_rate', label: 'Conversion Rate' },
+  { value: 'screenPageViews', label: 'Page Views' },
+  { value: 'bounceRate', label: 'Bounce Rate' },
+  { value: 'averageSessionDuration', label: 'Session Duration' },
+  { value: 'conversions', label: 'Conversions' },
   { value: 'transactions', label: 'Transactions' },
-  { value: 'revenue', label: 'Revenue' },
+  { value: 'totalRevenue', label: 'Revenue' },
 ];
 
 const GoogleAnalyticsDialog: React.FC<GoogleAnalyticsDialogProps> = ({ isOpen, onClose, onConnect }) => {
