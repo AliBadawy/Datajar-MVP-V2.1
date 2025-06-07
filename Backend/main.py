@@ -29,6 +29,7 @@ try:
     from routers.message_router import router as message_router
     from routers.salla_auth_router import router as salla_auth_router
     from routers.salla_router import router as salla_router
+    from routers.google_analytics_router import router as google_analytics_router
     logger.info("Successfully imported all routers")
 except Exception as e:
     logger.error(f"Error importing routers: {str(e)}")
@@ -49,7 +50,7 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://datajar-mvp-v21-production.up.railway.app"  # Add Railway domain for direct access
+    "https://datajar-mvp-v21-production.up.railway.app", # Add Railway domain for direct access
     "http://localhost:5175",
     "http://localhost:5176",
     "http://localhost:5177",
@@ -146,6 +147,10 @@ try:
     if 'salla_router' in locals():
         app.include_router(salla_router)
         logger.info("Included salla_router")
+    
+    if 'google_analytics_router' in locals():
+        app.include_router(google_analytics_router)
+        logger.info("Included google_analytics_router")
 except Exception as e:
     logger.error(f"Error including routers: {str(e)}")
     logger.error("Full traceback:")

@@ -37,6 +37,14 @@ export interface ProjectContextResponse {
   };
 }
 
+export interface GoogleAnalyticsRequestData {
+  service_account_json: Record<string, any>;
+  property_id: string;
+  start_date: string;
+  end_date: string;
+  metrics: string[];
+}
+
 // Base API URL - Using environment variable for deployment flexibility
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -96,6 +104,19 @@ export async function analyzeProject(projectId: string | number): Promise<any> {
     return res.data;
   } catch (error) {
     console.error('Error calling analysis API:', error);
+    throw error; // Let the component handle the error
+  }
+}
+
+export async function fetchGoogleAnalyticsData(projectId: string | number, data: GoogleAnalyticsRequestData): Promise<any> {
+  console.log('Fetching Google Analytics data for project', projectId);
+  try {
+    const api = await createAuthenticatedRequest();
+    const response = await api.post(`/api/projects/${projectId}/google-analytics/fetch`, data);
+    console.log('Received Google Analytics data:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching Google Analytics data:', error);
     throw error; // Let the component handle the error
   }
 }

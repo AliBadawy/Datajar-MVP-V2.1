@@ -1,6 +1,13 @@
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 
+class GoogleAnalyticsRequest(BaseModel):
+    service_account_json: dict  # parsed JSON from frontend
+    property_id: str
+    start_date: str  # format: YYYY-MM-DD
+    end_date: str
+    metrics: List[str]
+
 class AnalyzeRequest(BaseModel):
     messages: List[Dict[str, str]]  # Expected format: [{ role: 'user', content: '...' }]
     dataframe: Optional[Dict] = None

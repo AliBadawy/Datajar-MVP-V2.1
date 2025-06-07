@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BarChart3, FileText, Calendar, X, Check, ChevronDown } from 'lucide-react';
+import { X, BarChart3, FileIcon, Calendar, Check, ChevronDown } from 'lucide-react';
+import { fetchGoogleAnalyticsData } from '../../lib/api';
+import type { GoogleAnalyticsRequestData } from '../../lib/api';
 import { Button } from '../ui/button';
 
 interface GoogleAnalyticsDialogProps {
@@ -11,6 +13,7 @@ interface GoogleAnalyticsDialogProps {
     startDate: string;
     endDate: string;
     selectedMetrics: string[];
+    response?: any;
   }) => void;
 }
 
@@ -152,7 +155,7 @@ const GoogleAnalyticsDialog: React.FC<GoogleAnalyticsDialogProps> = ({ isOpen, o
   };
   
   // Validate and submit form
-  const handleConnect = () => {
+  const handleConnect = async () => {
     // Reset error state
     setError(null);
     
@@ -180,20 +183,67 @@ const GoogleAnalyticsDialog: React.FC<GoogleAnalyticsDialogProps> = ({ isOpen, o
     // Start loading state
     setIsLoading(true);
     
-    // Call the onConnect callback with form data
-    // In a real implementation, you might want to handle the API call here
-    // and only call onConnect after a successful response
-    setTimeout(() => {
-      onConnect({
-        serviceAccountKey,
-        propertyId,
-        startDate,
-        endDate,
-        selectedMetrics
-      });
+    try {
+      // Parse the service account key JSON from file
+      if (!serviceAccountKey) {
+        setError('Service account key file is required');
+        setIsLoading(false);
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const fileContent = e.target?.result as string;
+          const serviceAccountJson = JSON.parse(fileContent);
+          
+          // Prepare the request data
+          const requestData: GoogleAnalyticsRequestData = {
+            service_account_json: serviceAccountJson,
+            property_id: propertyId,
+            start_date: startDate,
+            end_date: endDate,
+            metrics: selectedMetrics
+          };
+    
+          // Call the API with project_id = 1 for now (should be dynamic in production)
+          const projectId = 1; // Temporarily hardcoded, should come from props or context
+          const response = await fetchGoogleAnalyticsData(projectId, requestData);
+          
+          // Call the onConnect callback with form data and API response
+          onConnect({
+            serviceAccountKey,
+            propertyId,
+            startDate,
+            endDate,
+            selectedMetrics,
+            response
+          });
+          
+          setIsLoading(false);
+          onClose();
+        } catch (e) {
+          setError('Invalid service account key JSON format');
+          setIsLoading(false);
+        }
+      };
+      
+      reader.onerror = () => {
+        setError('Error reading the service account key file');
+        setIsLoading(false);
+      };
+      
+      reader.readAsText(serviceAccountKey);
+      return;
+
+      // The actual API call is handled inside the FileReader.onload callback
+      
       setIsLoading(false);
       onClose();
-    }, 1500);
+    } catch (error: any) {
+      setError(`Failed to connect to Google Analytics: ${error.message || 'Unknown error'}`);
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -255,7 +305,7 @@ const GoogleAnalyticsDialog: React.FC<GoogleAnalyticsDialogProps> = ({ isOpen, o
           ) : (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
               <div className="flex items-center">
-                <FileText size={20} className="text-green-600 mr-3" />
+                <FileIcon size={20} className="text-green-600 mr-3" />
                 <span className="text-sm font-medium text-green-800">{serviceAccountKey.name}</span>
               </div>
               <button
